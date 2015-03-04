@@ -1,0 +1,84 @@
+.document {
+    padding: 1cm;
+}
+
+.document.view {
+    padding: 4px;
+}
+
+.document * {
+    color: #000;
+    font: normal 14px/normal Arial;
+}
+
+.document.view * {
+    font: normal 12px/normal Arial;
+}
+
+.document p {
+    text-align: justify;
+    padding: 1em 0;
+}
+
+.document p.parag{
+    text-indent: 2em;
+}
+
+.document p.center {
+    text-align: center;
+}
+.document p.b {
+    font-weight: bold;
+}
+.document table {width: 100%;}
+.document table, .document table td {
+    border: 0;
+    text-align: justify;
+}
+
+.document table.noborder-table {
+    border-spacing: 6px;
+    border-collapse: separate;
+}
+
+.document table.table {
+    border:1px solid #000;;
+    border-collapse: collapse;
+}
+
+.document table.table td,.document table.table th {
+    border: 1px solid #000 !important;
+    padding: 4px;
+}
+.document table.table th {
+    font-weight: bold;
+    text-align: center;
+}
+
+.document table.table td.center {
+    text-align: center !important;
+}
+.document table.table td.right {
+    text-align: right !important;
+}
+
+.document table.requisites {
+    width: 100%;
+    border-collapse: collapse;
+    border: 0px solid #000;
+}
+
+.document table.requisites>tbody>tr>td,.document table.requisites>tbody>tr>th {
+    border: 0px solid #000;
+    padding: 8px;
+}
+.document table.requisites>tbody>tr>td
+{
+    border-top: 0;
+    border-bottom: 0;
+}
+.document table.requisites>tbody>tr>th {
+    font-weight: bold;
+    text-align: center;
+}
+

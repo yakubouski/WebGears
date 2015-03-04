@@ -1,0 +1,17 @@
+Options +FollowSymlinks -Indexes -Includes -MultiViews
+AddType image/svg+xml svg svgz
+AddEncoding gzip svgz
+
+RewriteEngine On
+RewriteBase /
+
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^/?(.*\.less$) index.php?::less=$1 [NC,L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(\w+/[\w\.-/\\]+\.(css|js|less))$ index.php?::resource=$1&::type=$2 [NC,L]
+
+RewriteCond	%{REQUEST_FILENAME} !-f
+RewriteCond	%{REQUEST_FILENAME} !-d
+RewriteRule	^(.*)$ /index.php/$1 [L]
