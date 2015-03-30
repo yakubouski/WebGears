@@ -8,8 +8,13 @@ class Session extends SessionHandler
 {
     static public function Initialize($SessionClassHandler=FALSE,$SessionName=NULL,$SessionPath=NULL,$SessionTTL=NULL,$SessionId=NULL) 
     {
-	$SessionPath && (\File::MkDir(empty($SessionPath)?APP_SESSION_PATH:$SessionPath,true,0770) && 
-		@session_save_path(\File::Path(empty($SessionPath)?APP_SESSION_PATH:$SessionPath)));
+	!empty($SessionPath) && ($SessionPath = trim($SessionPath,'\\/'));
+	!empty($SessionPath) && !file_exists(Application::$directoryVirtualBase.$SessionPath) &&
+		mkdir(Application::$directoryVirtualBase.$SessionPath,true,0770);
+	!empty($SessionPath) && !file_exists(Application::$directoryVirtualBase.$SessionPath.'/.htaccess') &&
+	    file_put_contents(Application::$directoryVirtualBase.$SessionPath.'/.htaccess', "order deny,allow\ndeny from all");
+	!empty($SessionPath) && file_exists(Application::$directoryVirtualBase.$SessionPath) &&
+		@session_save_path(Application::$directoryVirtualBase.$SessionPath);
 	$SessionName && @session_name($SessionName);
 	$SessionTTL && session_set_cookie_params($SessionTTL);
 	$SessionId && @session_id($SessionId);
@@ -47,7 +52,7 @@ class SqlSessionHandler extends SessionHandler {
      * Open the session
      * @return bool
      */
-    public function open() {
+    public function open($save_path, $session_id) {
 	return $this->query(self::SQL_OPEN,  $this->sqlTable,  $this->sqlFieldTime,  $this->sessionTTL);
     }
     /**
@@ -116,5 +121,4 @@ class SqlSessionHandler extends SessionHandler {
         $sql = sprintf("DELETE FROM %s WHERE `timestamp` < '%s'", $this->dbTable, time() - intval($max));
         return $this->dbConnection->query($sql);
     }
-
 }

@@ -3,10 +3,16 @@ namespace Html;
 
 abstract class Widget {
     private $widgetArgs;
-    public function __construct($Args) {$this->widgetArgs = $Args;}
+    private $widgetTPL;
+    public function __construct($Args,$TPL=NULL) {$this->widgetArgs = $Args; $this->widgetTPL = $TPL;}
     abstract public function Begin();
     abstract public function End($InnerHTML);
     abstract public function Complete();
+    
+    protected function TPL() {
+	return is_null($this->widgetTPL) ? new Template() : $this->widgetTPL;
+    }
+    
     protected function arg($name,$default='',$ArgList=false) { 
 	return $ArgList == false ? (isset($this->widgetArgs[$name]) ? $this->widgetArgs[$name] : $default) :
 	    (isset($ArgList[$name]) ? $ArgList[$name] : $default); 
@@ -79,7 +85,7 @@ class Template
 	    require($templateFileName);
 	    return ob_get_clean();
 	}
-	\Error::Exception('### TEMPLATE ' . ($templateFileName?$this->templateFileName:$templateFileName) . ' # NOTEXIST ###');
+	trigger_error('### TEMPLATE ' . ($templateFileName?$this->templateFileName:$templateFileName) . ' # NOTEXIST ###');
     }
 
     public function Display($templateFileName=false,$Args=false) { print $this->Fetch($templateFileName,$Args); }
@@ -94,7 +100,7 @@ class Template
     }
     private function __current($class)
     {
-        return end($this->templateObjectsStack[$class]);
+        return @end($this->templateObjectsStack[$class]);
     }
 
     private function __block($class,$subclass,$args,$CompleteBeginEnd)
@@ -105,11 +111,11 @@ class Template
         if(class_exists($className)) {
 
             if ($CompleteBeginEnd == 0) {
-                $object = new $className($args);
+                $object = new $className($args,$this);
                 method_exists($object, "Complete") && call_user_func (array($object,  "Complete"));
             }
             elseif ($CompleteBeginEnd == 1) {
-                $object = new $className($args);
+                $object = new $className($args,$this);
                 $this->__push($subclass, $object);
                 ob_start();
                 method_exists($object, "Begin") && call_user_func (array($object, "Begin"));
@@ -135,18 +141,24 @@ class Template
             }
         }
     }
+    
+    private function __mkCompileDir($Dir) {
+	!file_exists($Dir) && mkdir($Dir, 0774, true);
+	!file_exists($Dir.'/.htaccess') && file_put_contents($Dir.'/.htaccess', "order deny,allow\ndeny from all");
+    }
+    
     private function __compile(&$sourceFileName) 
     {
-        if(file_exists(( $destFileName = \Application::Path(\Application::VirtualPath('.compiles/'.str_replace(array('/','\\',':','-'), '_', $sourceFileName))) )) &&
-                @filemtime(\Application::Path(\Application::VirtualPath('modules/'.$sourceFileName))) < filemtime($destFileName) )
+        if(file_exists(( $destFileName = (\Application::$directoryVirtualCompile.str_replace(array('/','\\',':','-'), '_', $sourceFileName)) )) &&
+                @filemtime((\Application::$directoryVirtualModules.$sourceFileName)) < filemtime($destFileName) )
         {
             $sourceFileName = $destFileName;
             return true;
         }
+	
+	$this->__mkCompileDir(\Application::$directoryVirtualCompile);
         
-        \Application::MkDir(\Application::VirtualPath('.compiles/'));
-
-        $phpSource = file_get_contents(\Application::Path(\Application::VirtualPath('modules/'.$sourceFileName)));
+        $phpSource = file_get_contents(\Application::$directoryVirtualModules.$sourceFileName);
 
         $sourceFileName = $destFileName;
 

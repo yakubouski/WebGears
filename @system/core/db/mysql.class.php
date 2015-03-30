@@ -8,7 +8,7 @@ class MySql extends \SqlDbDriver
      * @var mysqli 
      */
     private $hDbi;
-    private $dbHost,$dbUser,$dbPass,$dbSchema,$dbPort,$dbEncoding,$dbOptions;
+    private $dbHost,$dbUser,$dbPass,$dbSchema,$dbPort,$dbEncoding,$dbOptions,$dbLC;
     /**
      * @return mysqli
      */
@@ -21,14 +21,14 @@ class MySql extends \SqlDbDriver
             $this->hDbi = mysqli_init();
 	    !empty($this->dbOptions) &&  $this->hDbi->options(MYSQLI_READ_DEFAULT_GROUP,$this->dbOptions);
             !($this->hDbi->real_connect($this->dbHost, $this->dbUser, $this->dbPass, $this->dbSchema, $this->dbPort)) && 
-                \Error::Exception($this->hDbi->connect_error);
+		    trigger_error(__METHOD__.' '.$this->hDbi->connect_error,E_USER_ERROR);
             $this->hDbi->set_charset($this->dbEncoding);
-	    $this->hDbi->query("SET lc_time_names = 'ru_RU'/*,GLOBAL group_concat_max_len = 20000000, SESSION group_concat_max_len = 20000000*/");
+	    !empty($this->dbLC) && $this->hDbi->query("SET lc_time_names = '{$this->dbLC}'/*,GLOBAL group_concat_max_len = 20000000, SESSION group_concat_max_len = 20000000*/");
         }
         return $this->hDbi;
     }
     
-    public function init($dbHost=false,$dbUser=false,$dbPass=false,$dbSchema=false,$dbOptions='',$dbPort=3306,$dbEncoding='UTF8')
+    public function init($dbHost=false,$dbUser=false,$dbPass=false,$dbSchema=false,$dbOptions='',$dbPort=3306,$dbEncoding='UTF8',$lcCode='ru_RU')
     {
         $this->dbHost = $dbHost;
         $this->dbUser = $dbUser;
@@ -37,10 +37,11 @@ class MySql extends \SqlDbDriver
         $this->dbPort = $dbPort;
         $this->dbEncoding = $dbEncoding;
 	$this->dbOptions = $dbOptions;
+	$this->dbLC = $lcCode;
 	return $this;
     }
     
-    public function __construct($dbHost,$dbUser,$dbPass,$dbSchema=false,$dbOptions='',$dbPort=3306,$dbEncoding='UTF8') {
+    public function __construct($dbHost,$dbUser,$dbPass,$dbSchema=false,$dbOptions='',$dbPort=3306,$dbEncoding='UTF8',$lcCode='ru_RU') {
 	call_user_func_array([$this,'init'], func_get_args());
     }
 

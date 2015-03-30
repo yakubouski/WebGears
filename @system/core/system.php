@@ -13,33 +13,40 @@ define('APP_SYSTEM_DIRECTORY',__DIR__.DIRECTORY_SEPARATOR,true);
 !defined('APP_LOCALE_LANG') && define('APP_LOCALE_LANG','rus',true);
 !defined('APP_LOCALE_LANGUAGE') && define('APP_LOCALE_LANGUAGE','russian',true);
 !defined('APP_LOCALE') && define('APP_LOCALE','ru_RU',true);
-!defined('APP_MODULES_DIRECTORY') && define('APP_MODULES_DIRECTORY',APP_BASE_DIRECTORY.'modules/',true);
-!defined('APP_MODELS_DIRECTORY') && define('APP_MODELS_DIRECTORY',APP_BASE_DIRECTORY.'models/',true);
-!defined('APP_COMPILE_DIRECTORY') && define('APP_COMPILE_DIRECTORY',APP_BASE_DIRECTORY.'.compile/',true);
+!defined('APP_MODULES_DIRECTORY') && define('APP_MODULES_DIRECTORY','modules/',true);
+!defined('APP_MODELS_DIRECTORY') && define('APP_MODELS_DIRECTORY','models/',true);
+!defined('APP_COMPILE_DIRECTORY') && define('APP_COMPILE_DIRECTORY','.compile/',true);
 !defined('APP_LOG_DIRECTORY') && define('APP_LOG_DIRECTORY',APP_BASE_DIRECTORY.'.log/',true);
 !defined('APP_DEFAULT_MODULE') && define('APP_DEFAULT_MODULE','index',true);
 
 /**
+ * @package Core
+ * @subpackage Application
  * @author Andrei Yakubouski
  */
 final class Application {
     static public $directoryVirtualBase = APP_BASE_DIRECTORY;
-    static public $directoryVirtualCompile = APP_COMPILE_DIRECTORY;
-    static public $directoryVirtualModules = APP_MODULES_DIRECTORY;
-    static public $directoryVirtualModels = APP_MODELS_DIRECTORY;
+    static public $directoryVirtualCompile = APP_BASE_DIRECTORY.APP_COMPILE_DIRECTORY;
+    static public $directoryVirtualModules = APP_BASE_DIRECTORY.APP_MODULES_DIRECTORY;
+    static public $directoryVirtualModels = APP_BASE_DIRECTORY.APP_MODELS_DIRECTORY;
     static public $directoryLogs = APP_LOG_DIRECTORY;
     static public $IsDebugMode = DEBUG;
 
     static private $ApplicationDBI,$ApplicationModules,$ApplicationControllers;
 
+    /**
+     * Определение виртуального хоста
+     * @param string $RootDirectory относительный путь к коренвой директории виртуального хоста
+     * @return string относительный путь коренвой директории 
+     */
     static public function Virtual($RootDirectory=null) {
 	if(!is_null($RootDirectory)) {
-	    self::$directoryVirtualBase = $RootDirectory.'/';
+	    self::$directoryVirtualBase = APP_BASE_DIRECTORY.$RootDirectory.'/';
 	    self::$directoryVirtualCompile = self::$directoryVirtualBase.APP_COMPILE_DIRECTORY;
 	    self::$directoryVirtualModules = self::$directoryVirtualBase.APP_MODULES_DIRECTORY;
 	    self::$directoryVirtualModels = self::$directoryVirtualBase.APP_MODELS_DIRECTORY;
 	}
-	return self::directoryVirtualBase;
+	return self::$directoryVirtualBase;
     }
     /**
      * Зарегистрировать или получить глобальный объект БД
@@ -209,179 +216,97 @@ final class Application {
         }
     }
 }
+/**
+ * @package Core
+ * @subpackage Application
+ */
+class Module {
+    /**
+     * Выполнить SQL запрос
+     * @param string $SqlQuery формат SQL запроса
+     * @param mixed $Param1
+     * @return \SqlResult
+     */
+    protected function sqlQuery($SqlQuery) {
+	return call_user_func_array("Sql::Query", func_get_args());
+    }
+    /**
+     * Выполнить SQL запрос и вернуть результат в виде объекта
+     * @param string $SqlQuery формат SQL запроса
+     * @param array $QueryArgs масств аргументов
+     * @param false|string|function $SubClassIterator
+     * @return \SqlObject 
+     */
+    protected function sqlObject($SqlQuery,array $QueryArgs=[],$SubClassIterator=false) {
+	array_unshift($QueryArgs, $Query);
+	return Sql::Object(call_user_func_array("Sql::Query", $QueryArgs), $SubClassIterator);
+    }
+    
+    /**
+     * Выполнить SQL запрос и вернуть результат в виде набора строк
+     * @param string $SqlQuery формат SQL запроса
+     * @param array $QueryArgs масств аргументов
+     * @param false|string|function $SubClassIterator
+     * @return \SqlObject 
+     */
+    protected function sqlRecordset($SqlQuery,array $QueryArgs=[],$SubClassIterator=false) {
+	array_unshift($QueryArgs, $Query);
+	return Sql::Recordset(call_user_func_array("Sql::Query", $QueryArgs), $SubClassIterator);
+    }
+    
+    public function __callStatic($ModuleName, $arguments) {
+	return Application::Module($ModuleName) ?: new \Exception("Module: {$name} not found.");
+    }
+    
+    protected function getUserId() {
+	return class_exists('User') ? User::Get()->getId() : null;
+    }
+    protected function getUserGroup() {
+	return class_exists('User') ? User::Get()->getGroup() : null;
+    }
+}
 
 /**
- * Класс работы с файловой системой отнистельной базаовой директории приложения @see $_SERVER['DOCUMENT_ROOT']
+ * @package Core
+ * @subpackage Application
  */
-final class File {
-    /**
-     * @ignore
-     */
-    static public function FullPath($PathName) {
-	return APP_BASE_DIRECTORY.$PathName;
+abstract class Controller {
+    
+    abstract public function OnDefault();
+    
+    public static function  __callStatic($name,  $arguments)
+    {
+	return Application::Controller($name) ?: new \Exception("Controller: {$name} not found.");
     }
     
     /**
-     * Проверяет существует файл или нет
-     * @param string $PathName
-     * @return bool
+     * @param type $tplLocation
+     * @param type $tplArgs
+     * @return \Html\Template
      */
-    static public function Exist($PathName) {
-	return file_exists(APP_BASE_DIRECTORY.$PathName);
+    protected function tpl($tplLocation,$tplArgs=[]) {
+	return Html::Template($tplLocation, $tplArgs);
     }
-    /**
-     * Возващает UNIX time последнего изменения файла
-     * @param string $PathName
-     * @return int|false
-     */
-    static public function Time($PathName) {
-	return filemtime(APP_BASE_DIRECTORY.$PathName);
+    
+    protected function Location($Url='/',$Params=[], $HttpCode=0) {
+	while (ob_get_level()) ob_end_clean();
+	$HttpCode ? header('Location: '.$Path.(!empty($Params) ? ('?'.http_build_query($Params)) :''),TRUE,$HttpCode) : 
+	    header('Location: '.$Path.(!empty($Params) ? ('?'.http_build_query($Params)) :''));
+	exit;
+    }
+    
+    protected function HTTP_404($PageContent=false,$Code='404 Not Found') {
+	while (ob_get_level()) ob_end_clean();
+	header("HTTP/1.0 $Code");
+	header("Status: $Code");
+	!empty($PageContent) && print($PageContent);
+	exit;
     }
 
-    /**
-     * Создание директории
-     * @param string $Path - относительный путь
-     * @param bool|string $htaccess - закрыть директорию .htaccess (deny from all)
-     * @param int $Mod
-     */
-    static public function MkDir($Path,$htaccess=false,$Mod=0774) {
-	if(self::Exist($Path)) return true;
-	if(($res = mkdir(self::FullPath($Path),$Mod,true)) && !empty($htaccess)) {
-	    $firstDirectoryPath = preg_replace('%^([^/\\\\]+).*%m', '\1', $Path);
-	    !empty($firstDirectoryPath) && 
-		@file_put_contents(APP_BASE_DIRECTORY.$firstDirectoryPath.DIRECTORY_SEPARATOR.'.htaccess', ($htaccess === true?"order deny,allow\r\ndeny from all":$htaccess));
-	}
-	return $res;
-    }
-    /**
-     * Записать файл по относительному пути. Если путь не существует то он будет создан
-     * @param string $FilePathName
-     * @param mixed $Data
-     * @param int $Flags - Дополнительно можно использовать флаги: 
-     *	FILE_GZIP - содержимое файла будет сжиматься, 
-     *	FILE_JSON - данный будут сериализованы с помощью json_encode,
-     *	FILE_SERIALIZE - данные будут сериализованы с помощью serialize
-     * @return bool
-     */
-    static public function Write($FilePathName,$Data,$Flags=0) {
-	self::MkDir(dirname($FilePathName),true);
-	($Flags & FILE_SERIALIZE) && ($Data = serialize($Data));
-	($Flags & FILE_JSON) && ($Data = json_encode($Data));
-	($Flags & FILE_GZIP) && ($Data = gzencode($Data,9));
-	$Flags = $Flags & (~(FILE_GZIP|FILE_JSON|FILE_SERIALIZE));
-	return file_put_contents(self::FullPath($FilePathName), $Data,$Flags);
-    }
-    /**
-     * Прочитать содержимое файла
-     * @param string $FilePathName
-     * @param int $Flags смотри application::write_file
-     * @return mixed
-     */
-    static public function Read($FilePathName,$Flags=0) {
-	$content = file_get_contents(self::FullPath($FilePathName));
-	if(!empty($content)) {
-	    ($Flags & FILE_GZIP) && ($content = gzdecode($content));
-	    ($Flags & FILE_JSON) && ($content = json_decode($content,true));
-	    ($Flags & FILE_SERIALIZE) && ($content = unserialize($content));
-	}
-	else {
-	    $content = '';
-	}
-	return $content;
-    }
-    
-    /**
-     * Получить список файлов и папк в каталоге
-     * @param string $PathName
-     * @param function $Filter
-     * @return array
-     */
-    static public function Dir($PathName,$Filter=false) {
-	$filelist = array();
-	$PathName = self::FullPath($PathName);
-	
-	if (($dir = opendir($PathName))) {
-	    $PathName = rtrim($PathName, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-	    if (is_callable($Filter)) {
-		while (false !== ($fname = readdir($dir))) { if($fname == '.' || $fname == '..')     continue;
-		    $info = pathinfo($PathName . $fname);
-		    unset($info['dirname']);
-		    $info['extension'] = strtolower($info['extension']);
-		    $info['fullname'] = $PathName . $fname;
-		    $info['is_dir'] = is_dir($info['fullname']);
-		    call_user_func($Filter, $info) && $filelist[$info['basename']] = $info;
-		}
-	    } else {
-		while (false !== ($fname = readdir($dir))) { if($fname == '.' || $fname == '..')     continue;
-		    $info = pathinfo($PathName . $fname);
-		    unset($info['dirname']);
-		    $info['extension'] = isset($info['extension']) ? strtolower($info['extension']) : '';
-		    $info['fullname'] = $PathName . $fname;
-		    $info['is_dir'] = is_dir($info['fullname']);
-		    $filelist[$info['basename']] = $info;
-		}
-	    }
-	    closedir($dir);
-	}
-	return $filelist;
-    }
-    
-    /**
-     * Выгрузить файл
-     * @param string $FilePathName
-     * @param string $Mime
-     * @param array $Headers
-     * @param bool $Cache
-     * @param int $CacheTTL
-     */
-    static public function DownloadFile($FilePathName,$Mime,$Headers=[],$Cache=false,$CacheTTL=0) {
-	$fileName = self::FullPath($FilePathName);
 
-	while (@ob_get_level()) { @ob_end_clean(); }
-	
-        header('Content-type: '.$Mime);
-	!empty($Headers) &&  @array_map('header',$Headers);
-	
-	if($Cache && file_exists($fileName)) {
-	    $etagFile = @md5_file($fileName);
-	    $lastModified = @filemtime($fileName);
-	    @header('Pragma: cache');
-	    $CacheTTL ? @header("Cache-Control: max-age=".$CacheTTL) : @header('Cache-Control: public');
-	    $CacheTTL && @header("Expires: ".gmdate("D, d M Y H:i:s", time() + $CacheTTL) . " GMT");
-	    @header("Last-Modified: ".gmdate("D, d M Y H:i:s", $lastModified)." GMT");
-	    @header("Etag: ".$etagFile);
-	    
-	    $ifModifiedSince = (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? $_SERVER['HTTP_IF_MODIFIED_SINCE'] : false);
-	    $etagHeader = (isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : false);
-	    
-	    if(@strtotime($ifModifiedSince) == $lastModified || $etagHeader == $etagFile){
-		header("HTTP/1.1 304 Not Modified");
-		exit;
-	    }
-	}
-	@file_exists($fileName) && readfile($fileName);
-        exit;
-    }
-    /**
-     * Выгрузить содержимое
-     * @param type $Content
-     * @param type $Mime
-     * @param type $Headers
-     */
-    static public function DownloadContent($Content,$Mime,$Headers=[]) {
-	while (@ob_get_level()) { @ob_end_clean(); }
-        header('Content-type: '.$Mime);
-	!empty($Headers) &&  @array_map('header',$Headers);
-	print (string)$Content;
-        exit;
-    }
+    public function getUserID() { return class_exists('User') ? User::Get()->getId() : null; }
+    public function getUserGroup() { return class_exists('User') ? User::Get()->getGroup() : null;  }
 }
 
-final class Console {
-    static public function Error($object) {
-	if(DEBUG) {
-	    echo '<script>console.error('.  json_encode($object,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE).');</script>';
-	}
-    }
-}
+
 Application::__initialize(DEBUG);

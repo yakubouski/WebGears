@@ -1,0 +1,70 @@
+@import "../define.less";
+@import "../color-schema.less";
+
+[class^="ui-button"], [class*=" ui-button"] {
+    outline: 0;
+    border-radius: 1px;
+    padding: 3px 8px;
+    display: inline-block;
+    border: 1px solid rgba(220,220,220,0.9);
+    background-color: rgba(220,220,220,0.5);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 1em;
+    line-height: normal;
+    text-align: left;
+    vertical-align: top;
+}
+
+[class^="ui-button"][disabled], [class*=" ui-button"][disabled] {
+    cursor: not-allowed !important;
+    border: 1px solid rgba(40,40,40,0.1) !important;
+    background-color: rgba(200,200,200,0.1) !important;
+    color: rgba(200,200,200,0.8) !important;
+}
+
+[class^="ui-button"]:focus, [class*=" ui-button"]:focus {
+    border: 1px dotted rgba(50,50,50,0.4);
+}
+
+[class^="ui-button"]:active, [class*=" ui-button"]:active {
+    background-color: @MIDNIGHT-BLUE;
+    color: #ffffff;
+    border-color: transparent;
+}
+.ui-button-default { }
+.ui-button-blue { background-color:@BELIZE-HOLE; color: #ffffff; border-color: @BELIZE-HOLE;  }
+.ui-button-info { background-color:@PETER-RIVER; color: #ffffff; border-color: @PETER-RIVER;  }
+.ui-button-success { background-color:@NEPHRITIS; color: #ffffff; border-color: @NEPHRITIS;  }
+.ui-button-warning { background-color:@CARROT; color: #ffffff; border-color: @CARROT;  }
+.ui-button-danger { background-color:@POMEGRANATE; color: #ffffff; border-color: @POMEGRANATE;  }
+.ui-button-link { background-color:transparent; color: @BELIZE-HOLE; border-color: transparent;  }
+
+.ui-group-buttons {
+    display: block; 
+}
+.ui-group-buttons:after {
+    content: ' ';
+    clear: both;
+}
+
+.ui-group-buttons>* {
+    display: table-cell;
+    border: 0;
+    width: 100%;
+    float: left;
+    text-align: center;
+    vertical-align: middle;
+    padding: 8px;
+    .border-radius(0);
+}
+.ui-group-buttons>*:focus {
+    border:0;
+}
+.ui-group-buttons[data-columns='1']>* {width: 100%/1;}
+.ui-group-buttons[data-columns='2']>* {width: 100%/2;}
+.ui-group-buttons[data-columns='3']>* {width: 100%/3;}
+.ui-group-buttons[data-columns='4']>* {width: 100%/4;}
+.ui-group-buttons[data-columns='5']>* {width: 100%/5;}
+.ui-group-buttons[data-columns='6']>* {width: 100%/6;}
+.ui-group-buttons[data-columns='7']>* {width: 100%/7;}
