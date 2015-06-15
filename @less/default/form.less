@@ -10,3 +10,12 @@ ul.form-wizard {
 ul.form-wizard>li {
     display: inline-block;
 }
+
+input[type='file'] {display: block; position: relative; max-width: 450px; overflow-x: hidden; text-overflow: ellipsis;}
+input[type='file'].empty {
+    display: none;
+}
+
+label>input[type='radio'],label>input[type='checkbox'] {
+    position: relative; top: 2px;
+}

@@ -25,7 +25,7 @@ class WidgetPagination extends \Html\Widget {
 <span class="ui-pagination" >
     <?=$Title?>
     <? if(count($pages) > 1) { for ($i = 0; $i < count($pages); $i++) { $url = $pages[$i] == 1 ? $Href : ($Href."?page={$pages[$i]}");?>
-	<a href="<?=$url?>" class="page <?=($pages[$i] ==($PageNo) ? 's' : '')?>"><?= $pages[$i] ?></a>
+	<a href="<?=$url?>" class="page <?=($pages[$i] ==($PageNo) ? 'a' : '')?>"><?= $pages[$i] ?></a>
 	   <? if (isset($pages[$i + 1]) && ($pages[$i + 1] - $pages[$i]) >1) echo '...';
     } }?>
 </span>

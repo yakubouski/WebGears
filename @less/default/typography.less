@@ -11,7 +11,9 @@
 .f32 { font-size: 32px; }
 .f40 { font-size: 40px; }
 .f48 { font-size: 48px; }
-.b {font-weight: bold;}
+.b {font-weight: 600;}
+.normal {font-weight: normal;}
+.lighter {font-weight: 300;}
 .i { font-style: italic; }
 .s { text-decoration: line-through; }
 .u { text-decoration: underline; }
@@ -21,3 +23,12 @@
 .right {text-align: right;}
 .justify {text-align: justify;}
 .clear:after {display: block; height: 0px; line-height: 0; border:0px solid transparent; content: ' '; margin: 0; padding: 0; clear: both;}
+.nowrap {white-space: nowrap;}
+.nowrap.ellipsis {
+    display: inline-block;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+} 
+.top {vertical-align: top;}
+.middle {vertical-align: middle;}
+.bottom {vertical-align: bottom;}

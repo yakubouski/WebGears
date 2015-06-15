@@ -7,9 +7,9 @@ class Html {
      * @param array $tplArgs
      * @return \Html\Template
      */
-    static public function Template($tplLocation, $tplArgs = []) {
+    static public function Template($tplLocation, $tplArgs = [],$RawPath=false) {
 	require_once 'html/template.class.php';
-	return new \Html\Template($tplLocation, $tplArgs);
+	return new \Html\Template($tplLocation, $tplArgs,$RawPath);
     }
     
     static public function WidgetState($widget,$param,$state=null) {
@@ -35,29 +35,65 @@ function _h($text, $Flags = 0) {
 }
 
 /**
+ * Форматирует байты в Кб,Мб,Гб,Тб
+ */
+function _bytes($size) {
+    $size = intval($size);
+    if(!$size) {
+	return 'пустой';
+    }
+    elseif($size < (100*1024)) {
+	return _num($size/1024,1) . '&nbsp;Кб';
+    }
+    elseif($size < (1024*1024)) {
+	return _num($size/1024,1) . '&nbsp;Кб';
+    }
+    elseif($size < (1024*1024*1024)) {
+	return _num($size/1024*1024,1) . '&nbsp;Мб';
+    }
+    elseif($size < (1024*1024*1024*1024)) {
+	return _num($size/1024*1024*1024,1) . '&nbsp;Гб';
+    }
+}
+
+/**
  * Преобразует bb-коды в html сущности, а так-же заменяет \n на <br>
  * @param string $Text поддерживаются b,i,u,red,blue,gray,yellow, а так-же ссылки начианющиеся с http://, https:// ftp://
  * @return string
  */
-function _bb($Text) {
-    return nl2br(preg_replace(
-		    ['%\[(b|i|u)(?:\s(red|blue|gray|yellow))?[^\]]*\](.*?)\[/\1\]%i',
-	'%(?:http|https|ftp)://([^/\s]*)([^\s]{0,32})([^\s]*)%si',
-	'%\[a\s+([^]]+)\s*\](.+?)\[/a\]%',
-	'/\[quote(?:\s+\w+="([^"]+)")?(?:\s+\w+="([^"]+)")?\s*\]/i',
-	'/\[forward(?:\s+\w+="([^"]+)")?(?:\s+\w+="([^"]+)")?\s*\]/i',
-	'%\[/quote\]%',
-	'/\[forward(?:\s+from_id=([^"]+))?\]/i',
-	'%\[/forward\]%',
-		    ], ['<\1 class=\'bb-\2\'>\3</\1>',
-	'<a href=\'\0\' title=\'\1\2\3\' target=\'_blank\'>\1\2</a>',
-	'<a href=\'\1\'>\2</a>',
-	'<blockquote><div class="quote-title">\1 \2</div><div class="quote-text">',
-	'<blockquote class="forward"><div class="quote-title">\1 \2</div><div class="quote-text">',
-	'</blockquote>',
-	'<blockquote class="forward"><div class="quote-title">\1</div><div class="quote-text">',
-	'</blockquote>',
-		    ], _h($Text, ENT_NOQUOTES)));
+function _bb($Text,$Escape=false,$nl2br=true) {
+    static $bbCodes = [
+	'%\[s\]%'=>'<span style="text-decoration: line-through;">','%\[/s\]%'=>'</span>',
+	'%\[(/)?b\]%'=>'<\1strong>',
+	'%\[(/)?i\]%'=>'<\1em>',
+	'%\[(/)?u\]%'=>'<\1u>',
+	'%\[(/)?code\]%'=>'<\1code>',
+	'%\[(/)?quote\]%'=>'<\1blockquote>',
+	'%\[(/)?(sup|sub)\]%'=>'<\1\2>',
+	'/\[url=(.+?)\]/'=>'<a href="\1" target="_blank">','%\[/url\]%'=>'</a>',
+	'%\[img\](.*?)\[/img\]%'=>'<img src="\1" style="max-width: 10%;">',
+	'%\[(/)?\*\]%'=>'<\1li>',
+	'/\[color=(.+?)\]/'=>'<span style="color: \1;">','%\[/color\]%'=>'</span>',
+    ];
+    $listsStack = [];
+    $Escape && $Text = _h($Text);
+    $nl2br && $Text = nl2br($Text);
+    $Text = preg_replace_callback('%\[(/?)list=?(\d*)\]%', function($m)use(&$listsStack){
+	if($m[1]=='/') {
+	    return array_shift($listsStack);
+	}
+	else {
+	    if(isset($m[2]) && intval($m[2])) {
+		array_unshift($listsStack, '</ol>');
+		return '<ol start="'.intval($m[2]).'">';
+	    }
+	    else {
+		array_unshift($listsStack, '</ul>');
+		return '<ul>';
+	    }
+	}
+    }, $Text);
+    return preg_replace(array_keys($bbCodes),array_values($bbCodes),$Text);
 }
 
 /**
@@ -118,13 +154,13 @@ function _options($Values, $Default, $AssocKey = null, $AssocValue = null) {
 	foreach ($Values as $it) {
 	    if (isset($it[$AssocKey]) && isset($it[$AssocValue])) {
 		$Selected = $Default == $it[$AssocKey] ? 'selected' : '';
-		$OptList[] = '<option value="' . self::_h($it[$AssocKey]) . '" ' . $Selected . ' >' . self::_h($it[$AssocValue]) . '</option>';
+		$OptList[] = '<option value="' . _h($it[$AssocKey]) . '" ' . $Selected . ' >' . _h($it[$AssocValue]) . '</option>';
 	    }
 	}
     } else {
 	foreach ($Values as $AssocKey => $AssocValue) {
 	    $Selected = $Default == $AssocKey ? 'selected' : '';
-	    $OptList[] = '<option value="' . self::_h($AssocKey) . '" ' . $Selected . ' >' . self::_h($AssocValue) . '</option>';
+	    $OptList[] = '<option value="' . _h($AssocKey) . '" ' . $Selected . ' >' . _h($AssocValue) . '</option>';
 	}
     }
 
@@ -165,9 +201,9 @@ function _is($assert,$true,$false='') {
     return !empty($assert) ? $true : $false;
 }
 
-function _if_path($Url, $Success, $Index = 0) {
+function _if_path($Url, $Success, $Index = 1) {
     static $PATH;
-    is_null($PATH) && ($PATH = explode('/', !empty($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : '/'));
-    $Url = explode('/', $Url);
-    return isset($PATH[$Index]) && isset($Url[$Index]) && $PATH[$Index] == $Url[$Index] ? $Success : '';
+    is_null($PATH) && ($PATH = explode('/', !empty($_SERVER['PATH_INFO']) ? trim($_SERVER['PATH_INFO'],'/\\') : '/'));
+    $Url = explode('/', trim($Url,'/\\'));
+    return implode('/', array_slice($PATH,0, $Index)) ==  implode('/', array_slice($Url,0, $Index)) ? $Success : '';
 }

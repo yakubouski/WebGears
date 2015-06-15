@@ -1,0 +1,35 @@
+@import "../color-schema.less";
+table.table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    border: 1px solid @ASBESTOS;
+}
+table.table.full {
+    width: 100%;
+}
+table.table>thead>tr>th{
+    border: 1px solid @ASBESTOS;
+    color: @WET-ASPHALT;
+    padding: 4px;
+    font-weight: normal;
+    font-size: 14px;
+}
+table.table>tbody>tr>td{
+    border: 1px solid @ASBESTOS;
+    padding: 3px;
+}
+table.table>tbody>tr.na {
+    opacity: 0.4;
+}
+table.table>tbody>tr.na:hover {
+    opacity: 1;
+}
+table.table>tbody>tr[selected] {
+    background-color: gold;
+}
+table.table>tbody:nth-child(odd)>tr:nth-child(odd) {
+    background-color: rgba(200,200,200,0.2);
+}
+table.table>tbody:nth-child(odd)>tr:nth-child(even) {
+    background-color: rgba(250,250,250,0.6);
+}

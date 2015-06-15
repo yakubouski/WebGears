@@ -1,0 +1,111 @@
+@import "../define.less";
+.ui-modal-dialog {
+    .box-shadow(0px 0px 3px 0px rgba(30, 30, 30, 0.2)); 
+    border: 1px solid rgba(30,30,30,0.2);
+    background-color: rgba(255,255,255,0.95);
+    z-index: 99999;
+}
+.ui-modal-dialog>.caption {
+    padding: 4px;
+    color: #007dbc;
+    border-bottom: 1px solid rgba(30,30,30,0.1);
+    line-height: normal;
+    vertical-align: top;
+}
+.ui-modal-dialog .dialog-close {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 16px;
+    text-decoration: none;
+    color: white;
+    margin: 0;
+    margin-left: 16px;
+    border: 1px solid rgba(30,30,30,0.1);
+    background-color:rgba(67,144,223,0.9);
+    margin-top: -2px;
+    position: relative;
+    right: 0;
+    float: right;
+    font-size: 1rem;
+}
+
+.ui-modal-dialog>.content {
+    padding: 4px 0px;
+}
+
+ul.ui-notify {
+    display: block;
+    position: fixed;
+    list-style: none;
+    padding: 4px;
+    z-index: 1000;
+}
+ul.ui-notify>li{
+    display: table;
+    width: 100%;
+    border-spacing: 2px;
+    border-collapse: separate;
+    background-color: white;
+    background-color: rgba(30,30,30,0.2);
+    border: 1px solid rgba(30,30,30,0.1);
+    margin-bottom: 4px;
+    position: relative;
+    right: -300px;
+}
+
+ul.ui-notify>li.notify-default {}
+ul.ui-notify>li.notify-info {background-color:rgba(67,144,223,0.8); color: #ffffff; border-color: rgba(67,144,223,1); }
+ul.ui-notify>li.notify-success { background-color:rgba(96,169,23,0.8); color: #ffffff; border-color: rgba(96,169,23,1);  }
+ul.ui-notify>li.notify-warning { background-color:rgba(250,104,0,0.8); color: #ffffff; border-color: rgba(250,104,0,1);  }
+ul.ui-notify>li.notify-danger { background-color:rgba(154,22,22,0.8); color: #ffffff; border-color: rgba(154,22,22,1);  }
+
+ul.ui-notify>li .notify-close {
+    display: inline-block;
+    position: absolute;
+    float: right;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    vertical-align: middle;
+    text-decoration: none;
+    color: white;
+    right: 0;
+    margin-left: 16px;
+    margin-top: -2px;
+}
+
+
+ul.ui-notify>li>.notify-icon {
+    display: table-cell;
+    width: 20px;
+    vertical-align: top;
+    text-align: center;
+    white-space: nowrap;
+    padding: 4px;
+}
+ul.ui-notify>li>.notify-container {
+    display: table-cell;
+    max-width: 220px;
+    vertical-align: top;
+    padding: 4px;
+}
+ul.ui-notify>li>.notify-container>.notify-title {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.ui-wait {
+    display: block;
+    position: fixed;
+    padding: 8px;
+    top: -100px;
+    border: 2px solid transparent;
+    border-top: 0;
+    background-color:rgba(250,104,0,0.9); color: #ffffff; border-color: rgba(250,104,0,1);
+    z-index: 10000;
+}

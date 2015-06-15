@@ -10,7 +10,7 @@ final class File {
      * @ignore
      */
     static public function FullPath($PathName) {
-	return APP_BASE_DIRECTORY.Application::Virtual().$PathName;
+	return Application::Virtual().$PathName;
     }
     
     /**
@@ -38,6 +38,7 @@ final class File {
      */
     static public function MkDir($Path,$DenyFromAll=false,$Mode=0774) {
 	if(self::Exist($Path)) return true;
+	$n = self::FullPath($Path);
 	if(($res = mkdir(self::FullPath($Path),$Mode,true)) && !empty($DenyFromAll)) {
 	    $firstDirectoryPath = preg_replace('%^([^/\\\\]+).*%m', '\1', $Path);
 	    !empty($firstDirectoryPath) && 
@@ -58,7 +59,7 @@ final class File {
     static public function Write($FilePathName,$Data,$Flags=0) {
 	self::MkDir(dirname($FilePathName),true);
 	($Flags & FILE_SERIALIZE) && ($Data = serialize($Data));
-	($Flags & FILE_JSON) && ($Data = json_encode($Data));
+	($Flags & FILE_JSON) && ($Data = json_encode($Data,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
 	($Flags & FILE_GZIP) && ($Data = gzencode($Data,9));
 	$Flags = $Flags & (~(FILE_GZIP|FILE_JSON|FILE_SERIALIZE));
 	return file_put_contents(self::FullPath($FilePathName), $Data,$Flags);
@@ -132,6 +133,10 @@ final class File {
 	while (@ob_get_level()) { @ob_end_clean(); }
 	
         header('Content-type: '.$Mime);
+	header('Content-Description: File Transfer');
+	header('Content-Type: application/octet-stream');
+	header('Content-Length: ' . filesize($fileName));
+	
 	!empty($Headers) &&  @array_map('header',$Headers);
 	
 	if($Cache && file_exists($fileName)) {
@@ -166,5 +171,9 @@ final class File {
 	!empty($Headers) &&  @array_map('header',$Headers);
 	print (string)$Content;
         exit;
+    }
+    
+    static public function Type($FilePathName) {
+	return mb_strtolower(pathinfo($FilePathName,PATHINFO_EXTENSION));
     }
 }

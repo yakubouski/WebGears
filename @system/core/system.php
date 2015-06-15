@@ -74,7 +74,7 @@ final class Application {
     static public function __autoload($Class) {
 	$Class = str_replace('\\',DIRECTORY_SEPARATOR,strtolower(ltrim($Class,'\\')));
 	if(!(file_exists(($filename = APP_SYSTEM_DIRECTORY.$Class.'.class.php')) || 
-		file_exists(($filename = self::$directoryVirtualModels.$Class.'.class.php')))) {return FALSE;}
+		file_exists(($filename = self::$directoryVirtualModels.$Class.'.model.php')))) {return true;}
 	require_once $filename;
     }
     
@@ -94,14 +94,14 @@ final class Application {
 	    @ini_set('log_errors', 'On');
 	    @ini_set('ignore_repeated_errors', 'On');
 	    @error_reporting(-1);
-	    @ini_set('error_log', self::$directoryLogs.'.php.log');
+	    @ini_set('error_log', self::$directoryLogs.'php.log');
 	} else {
 	    @ini_set('display_errors','Off');
 	    @ini_set('display_startup_errors','Off');
 	    @ini_set('log_errors', 'On');
 	    @ini_set('ignore_repeated_errors', 'On');
 	    @error_reporting(-1);
-	    @ini_set('error_log', self::$directoryLogs.'.php.log');
+	    @ini_set('error_log', self::$directoryLogs.'php.log');
 	}
 	@spl_autoload_register('Application::__autoload');
     }
@@ -290,8 +290,14 @@ abstract class Controller {
     
     protected function Location($Url='/',$Params=[], $HttpCode=0) {
 	while (ob_get_level()) ob_end_clean();
-	$HttpCode ? header('Location: '.$Path.(!empty($Params) ? ('?'.http_build_query($Params)) :''),TRUE,$HttpCode) : 
-	    header('Location: '.$Path.(!empty($Params) ? ('?'.http_build_query($Params)) :''));
+	$HttpCode ? header('Location: '.$Url.(!empty($Params) ? ('?'.http_build_query($Params)) :''),TRUE,$HttpCode) : 
+	    header('Location: '.$Url.(!empty($Params) ? ('?'.http_build_query($Params)) :''));
+	exit;
+    }
+    
+    protected function Reload() {
+	while (ob_get_level()) ob_end_clean();
+	header('Location: '.$_SERVER['HTTP_REFERER']);
 	exit;
     }
     
@@ -302,11 +308,83 @@ abstract class Controller {
 	!empty($PageContent) && print($PageContent);
 	exit;
     }
+    
 
+    public function ReturnJSON($Data) {
+	while (ob_get_level()) ob_end_clean();
+        echo json_encode($Data,JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    public function ReturnHTML($Data) {
+	while (ob_get_level()) ob_end_clean();
+	header('Content-type: text/html');
+	print $Data;
+	exit;
+    }
 
     public function getUserID() { return class_exists('User') ? User::Get()->getId() : null; }
     public function getUserGroup() { return class_exists('User') ? User::Get()->getGroup() : null;  }
 }
 
+/**
+ * Сгенерировать исключение
+ * @param type $Msg
+ * @param type $Code
+ * @param type $Class
+ * @throws type
+ */
+function Exception($Msg='exception',$Code=0,$Class='Exception') {
+    throw new $Class($Msg, $Code);
+}
 
+/**
+ * Проверять на положительный результат выражение, для объекта тип SqlObject, проверяет пустой объект или нет, если выражение - ЛОЖЬ, то генерирует исключение, либо возвращает false
+ * @param mixed $Condition выаржение
+ * @param bool|string $Exception
+ * @throws Exception
+ * @return bool
+ */
+function AssertException($Condition,$Exception=false) {
+    $a = is_object($Condition);
+    $a = is_subclass_of($Condition, '\SqlObject');
+    $a = $Condition->IsEmpty();
+    $a = !$Condition->IsEmpty();
+    return 
+	(is_object($Condition) && (is_subclass_of($Condition, '\SqlObject') ? !$Condition->IsEmpty() : true)) && !empty($Condition) ? true :
+	    (empty($Exception) ? false : Exception($Exception));
+}
+
+/**
+ * Проверить права авторизованного пользователя
+ * @param type $Sids
+ * @param type $Groups
+ * @param type $Redirect
+ * @param type $Exception
+ */
+function Policy($Sids,$Groups,$Redirect=false,$Exception=false) {
+    class_exists('User');
+    trigger_error('Не реализован', E_USER_ERROR);
+}
+
+function Import($Namespace) {
+    $Namespace = str_replace('\\',DIRECTORY_SEPARATOR,strtolower(ltrim($Namespace,'\\')));
+	if(!(file_exists(($filename = APP_SYSTEM_DIRECTORY.$Namespace.'.class.php')))) {return true;}
+	require_once $filename;
+}
+
+/**
+ * Создание/получение объекта класса $Class
+ * @param string $Class 
+ * @return $Class
+ */
+function Singleton($Class) {
+    static $Instances = [];
+    $Class = strtolower($Class);
+    if(!isset($Instances[$Class]) && class_exists($Class, true)) {
+	$reflect = new ReflectionClass($Class);
+	$Instances[$Class] = $reflect->newInstanceArgs(array_slice(func_get_args(), 1));
+    }
+    return isset($Instances[$Class]) ? $Instances[$Class] : Exception($Class.' not exisit.');
+}
+    
 Application::__initialize(DEBUG);

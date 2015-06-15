@@ -27,7 +27,7 @@ abstract class SqlResult {
      * Установить указатель выборки на на начало
      * @return boolean 
      */
-    abstract public function Seek(int $Row=0);
+    abstract public function Seek($Row);
     /**
      * Получить количество строк SQL запроса
      * @return int 
@@ -44,19 +44,34 @@ class SqlRecordset implements \Iterator, \Countable, \ArrayAccess {
     /**
      * @var SqlResult
      */
-    private $QueryResult,$Iterator;
-    public function __construct(SqlResult $Result) {$this->QueryResult = $Result; $this->Iterator = 0;}
-    public function count($mode = 'COUNT_NORMAL') {return $this->QueryResult->Count();}
-    public function current() {return $this->QueryResult->FetchAssocRow();}
+    private $QueryResult,$Iterator,$NumRows,$FoundRows;
+    public function __construct($Result) {$this->QueryResult = $Result; $this->NumRows = $this->QueryResult ? $this->QueryResult->Count() : 0; $this->FoundRows = $this->QueryResult ? $this->QueryResult->Found() : $this->NumRows; $this->Iterator = 0;}
+    public function count($mode = 'COUNT_NORMAL') {return $this->NumRows;}
+    public function current() {return $this->QueryResult ? $this->QueryResult->FetchAssocRow() : 0;}
     public function key() {return $this->Iterator;}
     public function next() {++$this->Iterator;}
-    public function rewind() {$this->Iterator = 0;$this->QueryResult->Seek(0);}
+    public function rewind() {$this->Iterator = 0; $this->QueryResult ? $this->QueryResult->Seek(0) : null;}
     public function valid() {return $this->Iterator < $this->count();}
     public function offsetExists($offset) {return $offset < $this->count();}
-    public function offsetGet($offset) { $this->QueryResult->Seek($offset); return $this->QueryResult->FetchAssocRow(); }
+    public function offsetGet($offset) { $this->QueryResult ? $this->QueryResult->Seek($offset) : null; return $this->QueryResult ? $this->QueryResult->FetchAssocRow() : null; }
     public function offsetSet($offset, $value) {}
     public function offsetUnset($offset) {}
-    public function found() {return $this->QueryResult->Found();}
+    public function found() {return $this->FoundRows;}
+    public function toArray($function=false) { 
+	$Array = []; 
+	if(is_callable($function)) {
+	    foreach ($this as $r) { $Array[] = $function($r); } 
+	}
+	else {
+	    foreach ($this as $r) { $Array[] = $r; } 
+	}
+	return $Array; 
+    }
+    public function Column($columnkey) { 
+	$Array = []; 
+	foreach ($this as $r) { $Array[] = @$r[$columnkey]; } 
+	return $Array; 
+    }
 }
 
 /**
@@ -65,7 +80,7 @@ class SqlRecordset implements \Iterator, \Countable, \ArrayAccess {
 class SqlObject implements \ArrayAccess {
     private $objFields;
 
-    public function __construct(SqlResult $Result,$SubClassIterator=null) {
+    public function __construct($Result,$SubClassIterator=null) {
 	$this->objFields = is_object($Result) ? $Result->FetchAssocRow() : $Result;
 	is_callable($SubClassIterator) && $SubClassIterator($this);
     }
@@ -208,8 +223,8 @@ class Sql
      * @param mixed $arg1 
      * @return type
      */
-    static public function Format($Query/*,...*/) {
-	return func_num_args()==1 ? $Query : call_user_func_array('vsprintf',  func_get_args());
+    static public function Format($Query,$Arg1=null/*,...*/) {
+	return func_num_args()==1 ? $Query : call_user_func_array('vsprintf', func_get_args());
     }
 
     /**
@@ -266,7 +281,7 @@ class Sql
 	return is_string($SubClassIterator) ? (new $SubClassIterator($Result)) : new \SqlObject($Result,$SubClassIterator);
     }
     
-    static public function MySql($dbHost, $dbUser, $dbPass, $dbSchema, $dbOptions, $dbPort, $dbEncoding) {
+    static public function MySql($dbHost,$dbUser,$dbPass,$dbSchema=false,$dbOptions='',$dbPort=3306,$dbEncoding='UTF8',$lcCode='ru_RU') {
 	return new \DB\MySql($dbHost, $dbUser, $dbPass, $dbSchema, $dbOptions, $dbPort, $dbEncoding);
     }
 }

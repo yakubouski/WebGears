@@ -1,0 +1,93 @@
+@import "../color-schema.less";
+
+div.ui-info {
+    padding: 10px;
+    border: 1px solid fade(@WET-ASPHALT,15%);
+    background-color: white;
+    margin: 8px 0;
+    z-index: -1;
+    overflow: hidden;
+}
+div.ui-info.info {
+    background-color: fade(@PETER-RIVER, 30%);
+    border-color: fade(@PETER-RIVER, 60%);
+    color: fade(@WET-ASPHALT, 90%);
+}
+div.ui-info.success {
+    background-color: fade(@NEPHRITIS, 30%);
+    border-color: fade(@NEPHRITIS, 60%);
+    color: fade(@WET-ASPHALT, 90%);
+}
+div.ui-info.error,div.ui-info.fail {
+    background-color: fade(@ALIZARIN, 30%);
+    border-color: fade(@ALIZARIN, 60%);
+    color: fade(@WET-ASPHALT, 90%);
+}
+div.ui-info.warning {
+    background-color: fade(@SUN-FLOWER, 20%);
+    border-color: fade(@SUN-FLOWER, 40%);
+    color: fade(@WET-ASPHALT, 90%);
+}
+
+div.ui-info>.icon {
+    z-index: 0;
+    display: inline-block; 
+    float: left; 
+    width: 26px; 
+    vertical-align: middle;
+    padding: 0;
+    position: relative;
+    top: -3px;
+    height: 26px;
+    margin-right: 8px;
+    line-height: normal;
+}
+div.ui-info>.icon>svg {
+    fill: fade(@WET-ASPHALT, 60%);
+    width: 26px;
+    height: 26px;
+}
+div.ui-info>.button-close {
+    position: relative;
+    z-index: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    vertical-align: middle;
+    float: right;
+    padding: 0;
+    margin: 0;
+    top: -4px;
+    right: 0;
+    border: 0;
+    outline: 0;
+    font-size: 1.4em;
+    background-color: transparent;
+    color: fade(@WET-ASPHALT, 80%);
+}
+div.ui-info>.button-close:active {
+    background-color: fade(@WET-ASPHALT, 50%);
+    color: white;
+}
+
+.ui-pagination {
+    display: inline-block;
+    line-height: normal;
+    vertical-align: middle;
+}
+
+.ui-pagination>a.page {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 4px;
+    border: 1px solid transparent;
+    min-width: 18px;
+    color: @PETER-RIVER;
+    font-size: 1.1em;
+}
+
+.ui-pagination>a.page.a {
+    background-color: @PETER-RIVER;
+    color: white;
+}

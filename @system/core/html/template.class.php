@@ -57,6 +57,7 @@ class Template
      */
     protected $templateFileName;
     protected $templateVariables;
+    protected $templateRawPath;
     private $templateObjectsStack=array();
 
     /**
@@ -64,9 +65,10 @@ class Template
      * @param string $templateFileName
      * @param object $templateOwner
      */
-    public function  __construct($templateFileName=false,$variables=array()) {
+    public function  __construct($templateFileName=false,$variables=array(),$RawPath=false) {
         $this->templateFileName = $templateFileName;
         $this->templateVariables = $variables;
+	$this->templateRawPath = $RawPath;
     }
 
     public function  &__get($name) { return $this->templateVariables[$name]; }
@@ -74,9 +76,9 @@ class Template
     public function  __isset($name) { return isset($this->templateVariables[$name]); }
     public function  __unset($name) { unset($this->templateVariables[$name]); }
     
-    public function Fetch($templateFileName=false,$Args=false) {
+    public function Fetch($templateFileName=false,$Args=false,$RawPath=FALSE) {
         $templateFileName = (!$templateFileName?$this->templateFileName:$templateFileName);
-	if($this->__compile($templateFileName))
+	if($this->__compile($templateFileName,$RawPath?:$this->templateRawPath))
 	{
 	    !empty($this->templateVariables) && extract($this->templateVariables,EXTR_REFS);
 	    !empty($Args) && extract($Args,EXTR_REFS);
@@ -88,7 +90,12 @@ class Template
 	trigger_error('### TEMPLATE ' . ($templateFileName?$this->templateFileName:$templateFileName) . ' # NOTEXIST ###');
     }
 
-    public function Display($templateFileName=false,$Args=false) { print $this->Fetch($templateFileName,$Args); }
+    public function Exists($templateFileName) {
+	return file_exists(\Application::$directoryVirtualModules.$templateFileName);
+    }
+	    
+    
+    public function Display($templateFileName=false,$Args=false,$RawPath=FALSE) { print $this->Fetch($templateFileName,$Args,$RawPath); }
 
     private function __pop($class)
     {
@@ -147,10 +154,10 @@ class Template
 	!file_exists($Dir.'/.htaccess') && file_put_contents($Dir.'/.htaccess', "order deny,allow\ndeny from all");
     }
     
-    private function __compile(&$sourceFileName) 
+    private function __compile(&$sourceFileName,$RawPath=false) 
     {
         if(file_exists(( $destFileName = (\Application::$directoryVirtualCompile.str_replace(array('/','\\',':','-'), '_', $sourceFileName)) )) &&
-                @filemtime((\Application::$directoryVirtualModules.$sourceFileName)) < filemtime($destFileName) )
+                @filemtime($RawPath ? $sourceFileName : (\Application::$directoryVirtualModules.$sourceFileName)) < filemtime($destFileName) )
         {
             $sourceFileName = $destFileName;
             return true;
@@ -158,7 +165,7 @@ class Template
 	
 	$this->__mkCompileDir(\Application::$directoryVirtualCompile);
         
-        $phpSource = file_get_contents(\Application::$directoryVirtualModules.$sourceFileName);
+        $phpSource = file_get_contents($RawPath ? $sourceFileName : (\Application::$directoryVirtualModules.$sourceFileName));
 
         $sourceFileName = $destFileName;
 
