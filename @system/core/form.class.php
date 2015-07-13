@@ -117,7 +117,7 @@ class Form
      * @return mixed
      */
     static public function Is($Action,$On=true) {
-	return isset($_REQUEST[$Action]) ? (is_callable($On) ? call_user_func($On) : $On) : false;
+	return isset($_REQUEST[$Action]) ? (is_callable($On) ? call_user_func_array($On,array_slice(func_get_args(), 2)) : $On) : false;
     }
     /**
      * Преобразует значение в строку
