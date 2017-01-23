@@ -1,0 +1,74 @@
+.gradient(@color: #F5F5F5, @start: #EEE, @stop: #FFF) {
+    background: @color;
+    background: -webkit-gradient(linear,
+				 left bottom,
+				 left top,
+				 color-stop(0, @start),
+				 color-stop(1, @stop));
+    background: -ms-linear-gradient(bottom,
+				    @start,
+				    @stop);
+    background: -moz-linear-gradient(center bottom,
+				     @start 0%,
+				     @stop 100%);
+    background: -o-linear-gradient(@stop,
+				   @start);
+    filter: e(%("progid:DXImageTransform.Microsoft.gradient(startColorstr='%d', endColorstr='%d', GradientType=0)",@stop,@start));
+}
+.filter (...) {
+    -webkit-filter: @arguments;
+    filter: @arguments;
+}
+
+.border-radius(...) {
+    -webkit-border-radius: @arguments;
+    -moz-border-radius:    @arguments;
+    border-radius:         @arguments;
+}
+.box-shadow(...) {
+    -webkit-box-shadow: @arguments;
+    -moz-box-shadow:    @arguments;
+    box-shadow:         @arguments;
+}
+.box-sizing(@type: border-box) {
+  box-sizing: @type;
+  -webkit-box-sizing: @type;
+  -moz-box-sizing: @type;
+}
+.text-shadow(...) {
+    text-shadow: @arguments;
+}
+
+.calc-height(@arg) {
+    height: ~"calc(@{arg})"; 
+    height: ~"-moz-calc(@{arg})";
+    height: ~"-webkit-calc(@{arg})";
+}
+
+.calc-width(@arg) {
+    width: ~"calc(@{arg})"; 
+    width: ~"-moz-calc(@{arg})";
+    width: ~"-webkit-calc(@{arg})";
+}
+
+.transition(...) {
+    -webkit-transition: @arguments;
+    -moz-transition: @arguments;
+    -ms-transition: @arguments;
+    -o-transition: @arguments;
+    transition: @arguments;
+}
+
+.transform(...) {
+  -webkit-transform: @arguments;
+  -moz-transform: @arguments;
+  -o-transform: @arguments;
+  -ms-transform: @arguments;
+  transform: @arguments;
+}
+.rotation(@deg:5deg){
+  .transform(rotate(@deg));
+}
+.scale(@ratio:1.5){
+  .transform(scale(@ratio));
+}

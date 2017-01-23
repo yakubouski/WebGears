@@ -11,7 +11,6 @@ class I18NLocale  {
     function StrMoney($Amount,$Currency, $StripPenny=false,$WithDigits=false)
     {
         $words = array();
-	
         $isNegative = $Amount < 0;
 	$Amount = abs($Amount);
         $Amount = round($Amount, $this->CURRENCY[$Currency]['Round']);
@@ -19,23 +18,23 @@ class I18NLocale  {
 	
 	if($WithDigits) {
 	    $words[] = $this->Number($Amount, $StripPenny ? 0:$this->CURRENCY[$Currency]['Round'] );
-	    if(!$StripPenny) {
+	    if(!empty($StripPenny)) {
 		$remainder = $this->_getFloatRemainder($Amount, $this->CURRENCY[$Currency]['Round']);
 		if ($remainder < 10 && strlen($remainder) == 1) $remainder *= 10;
-		$words[] = trim('('.$this->NumberToText((int)$Amount,I18N::MALE,$this->CURRENCY[$Currency]['DollarNames']) . ' '.$this->NumberToText($remainder, I18N::FEMALE, $this->CURRENCY[$Currency]['PennyNames']).')');
+		$words[] = trim('('.$this->StrNumber((int)$Amount,I18N::MALE,$this->CURRENCY[$Currency]['DollarNames']) . ' '.$this->StrNumber($remainder, I18N::FEMALE, $this->CURRENCY[$Currency]['PennyNames']).')');
 	    }
 	    else {
-		$words[] = '('.$this->NumberToText((int)$Amount,I18N::MALE).')';
+		$words[] = '('.$this->StrNumber((int)$Amount,I18N::MALE).')';
 	    }
 	}
 	else {
-	    $words[] = $this->NumberToText((int)$Amount, I18N::MALE,$this->CURRENCY[$Currency]['DollarNames']);
-	    if(!$StripPenny) {
+	    $words[] = $this->StrNumber((int)$Amount, I18N::MALE,$this->CURRENCY[$Currency]['DollarNames']);
+	    if(!empty($StripPenny)) {
 		$remainder = $this->_getFloatRemainder($Amount, $this->CURRENCY[$Currency]['Round']);
 
 		if ($remainder < 10 && strlen($remainder) == 1) $remainder *= 10;
 
-		$words[] = $this->NumberToText($remainder, I18N::FEMALE, $this->CURRENCY[$Currency]['PennyNames']);
+		$words[] = $this->StrNumber($remainder, I18N::FEMALE, $this->CURRENCY[$Currency]['PennyNames']);
 	    }
 	}
         return trim(implode(' ', $words));
@@ -250,7 +249,7 @@ class ru_RU extends I18NLocale {
     public $CURRENCY = array(
 	'BYR'=>array(
 	    'Round'=>0,'Peny'=>false,'Sign'=>'бел. руб.',
-	    'DollarNames'=>array('беллоруский рубль','беллоруского рубля','беллоруских рублей'),
+	    'DollarNames'=>array('белорусский рубль','белорусских рублей','белорусских рублей'),
 	    'PennyNames'=>array('','','')),
 	'RUB'=>array(
 	    'Round'=>2,'Peny'=>true,'Sign'=>'руб.',
@@ -332,7 +331,7 @@ class I18N
      * @param array $Variants варианты сколения. Должно быть три варианта: array('object', 'objects', 'objects')
      * @return string
      */
-    public function Plural($Value,$Variants) {
+    static public function Plural($Value,$Variants) {
 	if (sizeof($Variants) < 3) ($Variants = implode($Variants,array_fill(0, 3, '')));
 	
         $Value = abs($Value);

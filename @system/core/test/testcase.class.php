@@ -57,4 +57,17 @@ class TestCase
 	self::Object()->OnTest();
     }
     protected function OnTest() {printf("You must overload function %s",__METHOD__);}
+    
+    static private $InlineTimer = 0;
+
+    static public function InlineStart() {
+	self::$InlineTimer = microtime(true);
+    }
+    static public function InlineEnd($NumSamplings,$Print=false) {
+	$Start=self::$InlineTimer;
+	$End = microtime(true);
+	self::$InlineTimer = 0;
+	$Print && printf('Итераций: %d. Общее время: %.2f  мс. Avg: %.4f мс',$NumSamplings,($End-$Start) * 1000,($End-$Start)/$NumSamplings*1000);	
+	return [$NumSamplings,($End-$Start) * 1000,($End-$Start)/$NumSamplings * 1000];
+    }
 }

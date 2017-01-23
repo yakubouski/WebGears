@@ -14,7 +14,7 @@ class Token {
     const Abbr	    = 3;
     const Domain    = 4;
     const Fullname  = 5;
-    const Date	    = 6;
+    const DateTime	    = 6;
     const Phone	    = 7;
     const NumRange  = 8;
     const Number    = 9;
@@ -44,8 +44,8 @@ class Token {
 	$this->Position = $position;
 	$this->Stem = $this->Lowercase = 
 		($type == Token::Abbr || $type == Token::Fullname || $type == Token::Word ? mb_strtolower($this->Token) : $this->Token);
-	$this->Type = ($type == Token::Word && isset(\Morphology::$StopWords[$this->Lowercase]) ? Token::StopWord:$type);
-	$this->Type == Token::Word && ($this->Stem = Singleton('Morphology\PorterStemmer')->stem_word($this->Lowercase));
+	$this->Type = ($type == Token::Word && isset(StopWord::$List[$this->Lowercase]) ? Token::StopWord:$type);
+	$this->Type == Token::Word && ($this->Stem = Singleton('Morphology\PorterStemmer')->Stem($this->Lowercase));
     }
     
     public function __toString() {

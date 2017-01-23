@@ -1,0 +1,90 @@
+@import '../typography.less';
+@UI-DEFAULT-MENU-HEIGHT: 30px;
+
+menu.ui-activemenu {
+    display: block;
+    height: @UI-DEFAULT-MENU-HEIGHT;
+    line-height: @UI-DEFAULT-MENU-HEIGHT;
+    .ellipsis(100vw);
+    margin: 0;
+    overflow-y: hidden;
+    vertical-align: top;
+    padding: 0;
+}
+
+menu.ui-activemenu>li {
+    display: inline-block;
+    height: @UI-DEFAULT-MENU-HEIGHT;
+    padding: 0;
+    margin: 0;
+    margin-right: 1rem;
+    font-size: 1.3rem;
+    color: @CONCRETE;
+    position: relative;
+}
+
+menu.ui-activemenu.sub {
+    height: auto;
+    line-height: normal;
+    margin: 8px 0;
+}
+
+menu.ui-activemenu.sub>li {
+    display: inline-block;
+    height: @UI-DEFAULT-MENU-HEIGHT;
+    padding: 0;
+    margin: 0;
+    margin-right: 1rem;
+    font-size: 1.1rem;
+    color: @CONCRETE;
+    position: relative;
+}
+menu.ui-activemenu>li[data-counter]:after {
+    display: block;
+    position: absolute;
+    right: -0.8rem;
+    top: 0;
+    content: attr(data-counter);
+    font-size: 9px;
+    line-height: 12px;
+    padding: 4px 1px;
+    color: @ALIZARIN;
+    font-weight: @FW-BOLD;
+}
+
+menu.ui-activemenu>li>a {
+    color: @CONCRETE;
+    display: block;
+    text-decoration: none;
+}
+
+
+menu.ui-activemenu>li[selected],menu.ui-activemenu>li[selected]>a {
+    color: @WET-ASPHALT;
+    font-weight: @FW-BOLDER;
+}
+
+menu.ui-activemenu.sub>li[selected],menu.ui-activemenu.sub>li[selected]>a {
+    color: @TURQUOISE;
+    font-weight: @FW-BOLDER;
+}
+
+@media only screen 
+and (max-device-width : 640px) {
+    menu.ui-activemenu>li[data-counter]:after {
+        display: block;
+        position: absolute;
+        right: -0.6rem;
+        top: 6px;
+        content: '';
+        font-size: 1px;
+        line-height: 1px;
+        padding: 2px;
+        width: 8px;
+        height: 8px;
+        font-weight: @FW-BOLD;
+        border-radius: 50%;
+        background-color: red;
+    }
+
+}

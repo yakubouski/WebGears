@@ -84,8 +84,6 @@ class Virtual implements \ArrayAccess
     static public function Object(array $Members=[]) {
 	return new Virtual($Members);
     }
-    
-    
 }
 
 

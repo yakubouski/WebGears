@@ -8,4 +8,5 @@ class Math
     static public function __Test() {
 	\Test\TestCases::Run(__DIR__.DIRECTORY_SEPARATOR.'math/tests/*.test.php');
     }
+    
 }

@@ -6,7 +6,7 @@
  */
 class Session extends SessionHandler
 {
-    static public function Initialize($SessionClassHandler=FALSE,$SessionName=NULL,$SessionPath=NULL,$SessionTTL=NULL,$SessionId=NULL) 
+    static public function Initialize($SessionClassHandler=FALSE,$SessionName=NULL,$SessionPath=NULL,$SessionTTL=NULL,$SessionId=NULL,$SessionDomain=NULL) 
     {
 	!empty($SessionPath) && ($SessionPath = trim($SessionPath,'\\/'));
 	!empty($SessionPath) && !file_exists(Application::$directoryVirtualBase.$SessionPath) &&
@@ -15,8 +15,8 @@ class Session extends SessionHandler
 	    file_put_contents(Application::$directoryVirtualBase.$SessionPath.'/.htaccess', "order deny,allow\ndeny from all");
 	!empty($SessionPath) && file_exists(Application::$directoryVirtualBase.$SessionPath) &&
 		@session_save_path(Application::$directoryVirtualBase.$SessionPath);
-	$SessionName && @session_name($SessionName);
-	$SessionTTL && session_set_cookie_params($SessionTTL);
+	!empty($SessionName) && @session_name($SessionName);
+	($SessionTTL) && session_set_cookie_params(intval($SessionTTL),'/');
 	$SessionId && @session_id($SessionId);
 	$SessionClassHandler && @session_set_save_handler(new $SessionClassHandler, true);
 	@session_start();

@@ -108,15 +108,10 @@ class PorterStemmer
         return $stem;
     }
     
-    private function stem_word(&$Word)
+    public function Stem($Word)
     {
         if(preg_match('/^[a-z]+$/', $Word)) return $this->en_stem_word ($Word);
         return $this->ru_stem_word ($Word);
-    }
-    
-    public function getStem( $Word )
-    {
-	return $this->stem_word($Word);
     }
 
     /**

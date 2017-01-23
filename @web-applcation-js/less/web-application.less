@@ -1,0 +1,73 @@
+@APP-BODY-WIDTH:    1024px;
+
+@APP-HEADER-HEIGHT:    45px;
+@APP-HEADER-BK-COLOR:    white;
+@APP-HEADER-COLOR:      @ASBESTOS;
+
+@APP-FOOTER-HEIGHT:    40px;
+@APP-FOOTER-BK-COLOR:    white;
+
+@BORDER-COLOR:  fade(@SILVER,40);
+
+.abs-middle {
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
+svg.icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+}
+
+
+.frame-width {
+    margin: 0 auto; 
+    max-width: @APP-BODY-WIDTH;
+    width: 100%;
+}
+
+app-body {
+    .frame-width;
+    position: relative;
+    display: block;
+    padding: 0;
+    background-color: @CLOUDS;
+}
+
+@import "app-header.less";
+@import "app-footer.less";
+@import "app-main.less";
+
+@media (orientation: landscape) and (max-width:@APP-BODY-WIDTH){ 
+    body {
+        overflow: hidden;
+        app-body::before,app-body::after {
+            display: block;
+            position: fixed;
+            z-index: 1000;
+            background-color: white;
+            left: 0; top: 0;
+            width: 100vw;
+            height: 100vh;
+            .f-bold;
+            text-transform: uppercase;
+            text-align: center;
+            content: ' ';
+            line-height: 100vh;
+            font-size: larger;
+            vertical-align: middle;
+            color: @WET-ASPHALT;
+        }
+        app-body::after {
+            content: ' Поверните экран';
+            background: url('/img/icons/rotate.svg') no-repeat center center
+            //background: data-uri('image/svg+xml;charset=UTF-8','../img/icons/rotate.svg') no-repeat center center;
+        }
+                    
+
+    }
+}

@@ -134,7 +134,7 @@ final class File {
 	
         header('Content-type: '.$Mime);
 	header('Content-Description: File Transfer');
-	header('Content-Type: application/octet-stream');
+	//header('Content-Type: application/octet-stream');
 	header('Content-Length: ' . filesize($fileName));
 	
 	!empty($Headers) &&  @array_map('header',$Headers);

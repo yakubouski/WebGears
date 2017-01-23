@@ -13,6 +13,56 @@ var DateInterval = function (Begin,End) {
 	days: Math.floor((End.Date() - Begin.Date()) / 86400000)
     };
 };
+
+Calendar = {
+    RU: {
+        FullMonths: {'01':'Январь','02':'Февраль','03':'Март','04':'Апрель','05':'Май','06':'Июнь',
+        '07':'Июль','08':'Август','09':'Сентябрь','10':'Октябрь','11':'Ноябрь','12':'Декабрь'},
+        FullMonthsDays: {'01':'Января','02':'Февраля','03':'Марта','04':'Апреля','05':'Мая','06':'Июня',
+        '07':'Июля','08':'Августа','09':'Сентября','10':'Октября','11':'Ноября','12':'Декабря'},
+        ShortMonths: {'01':'янв','02':'фев','03':'мар','04':'апр','05':'май','06':'июн',
+        '07':'июл','08':'авг','09':'сен','10':'окт','11':'ноя','12':'дек'},
+        FullWeekDays: {1:'Понедельник',2:'Вторник',3:'Среда',4:'Четверг',5:'Пятница',6:'Суббота',7:'Воскресенье'},
+        ShortWeekDays: {1:'Пн',2:'Вт',3:'Ср',4:'Чт',5:'Пт',6:'Сб',7:'Вс'}
+    },
+    HourRange: function(StartHour,EndHour,Interval) {
+        Interval = parseInt(Interval === undefined ? 5 : Interval);
+        StartHour = parseInt(StartHour === undefined ? 0 : StartHour);
+        EndHour = parseInt(EndHour === undefined ? 0 : EndHour);
+        var HourRange = [];
+        for(h=StartHour;h<EndHour;h+=Interval) {
+            HourRange[HourRange.length] = (("0"+h).slice(-2));
+        }
+        return HourRange;
+    },
+    MinuteRange: function(StartMinute,EndMinute,Interval) {
+        Interval = parseInt(Interval === undefined ? 5 : Interval);
+        StartMinute = parseInt(StartMinute === undefined ? 0 : StartMinute);
+        EndMinute = parseInt(EndMinute === undefined ? 0 : EndMinute);
+        var MinuteRange = [];
+        for(i=StartMinute;i<EndMinute;i+=Interval) {
+            MinuteRange[MinuteRange.length] = (("0"+i).slice(-2));
+        }
+        return MinuteRange;
+    },
+    TimeRange: function(StartTime,EndTime,Interval){
+        Interval = parseInt(Interval === undefined ? 10 : Interval);
+        StartTime = StartTime === undefined ? '00:00' : StartTime;
+        EndTime = EndTime === undefined ? '23:50' : EndTime;
+        var hmStart = StartTime.split(':',2); hmStart[0] = parseInt(hmStart[0]); hmStart[1] = parseInt(hmStart[1]);
+        var hmEnd = EndTime.split(':',2); hmEnd[0] = parseInt(hmEnd[0]); hmEnd[1] = parseInt(hmEnd[1]);
+        var TimeRange = [];
+        var i = hmStart[1];
+        for(h=hmStart[0];h<=hmEnd[0];h++) {
+            if(i>=60) {i -= 60;}
+            for(;i<(h!==hmEnd[0] ? 60 : hmEnd[1]);i+=Interval) {
+                TimeRange[TimeRange.length] = (("0"+h).slice(-2))+":"+(("0"+i).slice(-2))+":00";
+            }
+        }
+        return TimeRange;
+    }
+};
+
 /**
  * 
  * @param {String|DateTime} date
@@ -51,7 +101,7 @@ DateTime = function(date,d,m,Y) {
 	i: dt.getMinutes(),
 	s: dt.getSeconds(),
 	z: Math.floor((dt - new Date(dt.getFullYear(), 0, 0)) / 86400000),
-
+        
 	Date: function(d,m,Y) {
 	    return new Date(Y !== undefined ? Y: this.Y, m !== undefined ? m : parseInt(this.m)-1, d !== undefined ? d: this.d);
 	},
@@ -77,14 +127,45 @@ var Ui = {
 	    e.preventDefault();
 	    e.stopPropagation();
 	    Dialog.Close();
+	}).on('change', '[data-ui-switch]', function(e) {
+	    if($(this).prop('checked')) {
+                $($(this).data('ui-switch-hide')).hide();
+                $($(this).data('ui-switch')).show();
+            }
 	}).on('click','.wait',function(){
 	    Wait.Begin($(this).attr('wait'));
 	}).on('click','div.ui-info>.button-close',function(){
 	    $(this).closest('div.ui-info').hide(200,function(){
 		$(this).remove();
 	    });
-	}).ready(function(){
-	    //$('input[type="file"]').fileselect();
+	}).on('change keyup','.ui-date>select',function(){
+            var ctrl = $(this).closest('.ui-date');
+            if(ctrl.hasClass('time')) {
+                var val = $(ctrl).find('input:hidden');
+                var hh = $(ctrl).find('.time-hh');
+                var mm = $(ctrl).find('.time-mm');
+                $(val[0]).val(hh.val()+':'+mm.val());
+                if(val.length===2) {
+                    var hh = $(ctrl).find('.duration-hh');
+                    var mm = $(ctrl).find('.duration-mm');
+                    $(val[1]).val(hh.val()+':'+mm.val());
+                }
+            }
+            else {
+                var val = $(ctrl).find('input:hidden');
+                var day = $(ctrl).find('.date-day');
+                var month = $(ctrl).find('.date-month');
+                var year = $(ctrl).find('.date-year');
+                var date = new DateTime(year.val()+'-'+month.val()+'-'+day.val());
+                day.val(date.Format('d'));
+                month.val(date.Format('m'));
+                year.val(date.Format('Y'));
+                val.val(date.Format('Y-m-d'));
+                $(ctrl).find('.date-dow').text(Calendar.RU.FullWeekDays[date.N]);
+            }
+        }).ready(function(){
+            $('[data-ui-switch][checked]').trigger('change');
+            $('.ui-date>select').trigger('change');
 	    $('form.ajax').ajaxForm({
 		beforeSubmit: function(data,form){
 		    $(form).data('onbefore') !== undefined && (result = window[($(form).data('onbefore'))](data,form));
@@ -99,7 +180,6 @@ var Ui = {
 		dataType: $(this).data('result')!==undefined ? $(this).data('result') : 'html'
 	    });
 	});
-	
 	$(window).on('resize','.sizing',function(){});
 	
 	$.fn.fileselect = function() {
@@ -162,8 +242,91 @@ var Ui = {
 	$(window).on('resize',call);
 	call();
     },
-    widget: function() {
-	
+    Widget: function(element,WidgetClass) {
+        if(element.data('$WIDGET') === undefined) {
+            (WidgetClass === undefined || WidgetClass === null ? (WidgetClass = {}) : null);
+            typeof WidgetClass.__init === 'function' && WidgetClass.__init.call(WidgetClass); 
+            element.data('$WIDGET',WidgetClass);
+        }
+        return element.data('$WIDGET');
+    },
+    Dynamic: function(element){
+        return Ui.Widget($(element),{
+            Element: $(element),
+            AutoLoad: false,
+            Url: '',
+            OnSuccess: false,
+            __init: function (){
+                this.AutoLoad = $(this.Element).attr('autoload') !== undefined;
+                this.Url = $(this.Element).attr('url');
+                this.AutoLoad && this.Reload();
+            },
+            Reload: function(data) {
+                var params = $(this.Element).data();
+                var This = this;
+                delete params['$WIDGET'];
+                (data!==undefined && data !== null) && ($.extend( params, data ));
+                $.ajax({
+                    method: "POST",
+                    url: this.Url,
+                    data: params,
+                    cache: false,
+                    dataType: "html"
+                }).done(function (html) {
+                    if (typeof This.OnSuccess === 'function') {
+                        This.OnSuccess.call(This.Element,html);
+                    }
+                    else {
+                        $(This.Element).html(html);
+                    }
+                });
+            },
+            Success: function(callback) {
+                this.OnSuccess = callback;
+            }
+        });
+    },
+    ActiveMenu: function(element){
+        return Ui.Widget($(element),{
+            Element: $(element),
+            Elements: $(element).children(),
+            __init: function (){
+                var Menu = this;
+                $(this.Elements).each(function(){
+                    if($(this).attr('selected') === undefined && $(this).data('route') !== undefined) {
+                        var re = new RegExp($(this).data('route'),'ig');
+                        re.test(window.location.pathname) && $(this).attr('selected','');
+                    }
+                }).click(function(e){
+                    var item = $(this);
+                    $(Menu.Elements).removeAttr('selected');
+                    item.attr('selected','');
+                    e.preventDefault();
+                    var el = item.data('scroll');
+                    item.parent().animate({scrollLeft: el.offset + (el.index?-40:0)}, 300,function(){
+                        window.location = item.find('a:first-child').attr('href');
+                    });
+                });
+                Menu.__invalidate();
+                $(window).on('resize',function(){
+                    Menu.__invalidate();
+                });
+            },
+            scrollTo: function(element) {
+                if(element === 'selected') {
+                   var el = $(this.Elements).filter('[selected]').data('scroll');
+                   $(this.Element).scrollLeft(el.offset + (el.index?-40:0));
+                }
+            },
+            __invalidate: function(){
+                this.Element.scrollLeft(0);
+                var offset = this.Element.offset().left;
+                $.each(this.Elements,function(i){
+                    $(this).data('scroll',{index: i,offset:$(this).offset().left-offset});
+                });
+                this.scrollTo('selected');
+            }
+        });
     },
     /**
      * Получения данных в режиме простоя
@@ -202,19 +365,151 @@ var Ui = {
      * @param {string} hAlign горизонтальное вырваниваие left|right|center
      * @param {object} Target элемент относительно которого выравнивается  элемент
      */
-    AdjustPosition: function(Element,vAlign,hAlign,Target) {
+    AdjustPosition: function(Element,vAlign,hAlign,Target,position) {
 	vAlign = vAlign !== 'top' && vAlign !== 'bottom' ? 'center' : vAlign;
 	hAlign = hAlign !== 'right' && hAlign !== 'left' ? 'center' : hAlign;
+        position = position === undefined ? 'fixed' : position;
 	Target = Target === undefined ? window : Target;
 	var top = 0;
 	var left = 0;
-	$(Element).css("position", "fixed");
-	if($(Element).outerWidth() >= $(Target).width() ) {$(Element).width($(Target).width());}
+	$(Element).css("position", position);
+	//if($(Element).outerWidth() >= $(Target).width() ) {$(Element).width($(Target).width());}
 	if(hAlign === 'center') {left = ($(Target).width()>>1) - ($(Element).outerWidth(true)>>1);}
-	else {left = $(Target).width() - $(Element).outerWidth(true);}
-	if(vAlign === 'bottom') {top = $(Target).height() - $(Element).height();} else if(vAlign === 'center') { top = ($(Target).height()>>1) - ($(Element).height()>>1); }
+	else if(vAlign === 'right') {left = $(Target).width() - $(Element).outerWidth(true);}
+	if(vAlign === 'bottom') {top = $(Target).height() - $(Element).height();} else if(vAlign === 'center') { top = ($(Target).height()>>1) - ($(Element).outerHeight(true)>>1); }
 	$(Element).css({top: top+'px',left: left+'px'});
 	return $(Element);
+    },
+    Dialog: function(Url,Data,Class) {
+        $.get(Url,Data).success(function(dlg){
+            var dialogModalContainer = document.createElement("DIV");
+            dialogModalContainer.className = 'ui-modal' + (Class !== undefined ? (' '+Class):'');
+            $(dialogModalContainer).html('<div class="prompt">'+dlg+'</div>');
+            document.body.appendChild(dialogModalContainer);
+            $('.ui-modal button.cancel').click(function(){
+                $('.ui-modal').remove();
+            });
+            Ui.AdjustPosition($(dialogModalContainer).find('.prompt'),'center', 'left',undefined,'relative');
+            Ui.OnResize(function(){
+                $('.ui-modal>.prompt').each(function(){
+                    Ui.AdjustPosition($(this),'center', 'left',undefined,'relative');
+                });
+            });
+        });
+    },
+    /**
+     * @param {array} FieldsList список полей в форме
+     * @param {string} Title Заголовок формы
+     * @param {string} Desc Дополнительное описание формы
+     * @param {string} Action Значение поля <form action="Action" ...
+     * @param {string} SubmitButton Название кнопки ["Сохранить"]
+     * @param {string} Class Название класса формы
+     */ 
+    Prompt: function (FieldsList,Title,Desc,Action,SubmitButton,Class) {
+        var promptModalContainer = document.createElement("DIV");
+        promptModalContainer.className = 'ui-modal' + (Class !== undefined ? (' '+Class):'');
+        SubmitButton = SubmitButton === undefined ? 'Сохранить' : SubmitButton;
+        Action = (Action!==undefined?Action:'');
+        var attr = function(val,name) {
+            return val===undefined || val === null ? '' : (' '+name+'="'+val+'"');
+        };
+        var fields = [];
+        var actions = [];
+        $.each(FieldsList,function(){
+            var ctrl = '';
+            switch(this.type) {
+                case 'action':
+                    actions[actions.length] = '<button '+attr(this.name,'name') + attr(this.class,'class') +'>'+this.value+'</button>';
+                break;
+                case 'hidden':
+                    ctrl = '<input type="hidden"'+attr(this.name,'name') + attr(this.id,'id') + attr(this.value,'value') + '>';
+                    break;
+                case 'text':
+                    ctrl = '<input type="text"' + attr(this.required,'required') + attr(this.list,'list') + attr(this.class,'class') + attr(this.name,'name') + attr(this.pattern,'pattern') +
+                            attr(this.id,'id') + attr(this.placeholder,'placeholder') + attr(this.value,'value') + '>';
+                    break;
+                case 'textarea':
+                    ctrl = '<textarea' + attr(this.required,'required') + attr(this.class,'class') + attr(this.name,'name') + attr(this.id,'id') + 
+                            attr(this.placeholder,'placeholder') + '>'+this.value+'</textarea>';
+                    break;
+                case 'custom':
+                    ctrl = this.control.call(this);
+                    break;    
+                case 'checkbox':case 'radio':
+                    ctrl = '<label><input type="'+this.type+'"' + attr(this.required,'required') + attr(this.name,'name') + 
+                            attr(this.id,'id') + attr(this.checked===undefined || this.checked===false ? null : '','checked') + attr(this.value,'value') + '> '+(this.label!==undefined ? this.label : '')+'</label>';
+                    break;
+                case 'date':
+                    var now = DateTime(this.value !== undefined && this.value !== '' ? this.value : new Date());
+                    ctrl = '<div><div class="ui-date"><input type="hidden"' + attr(this.name,'name') + attr(this.id,'id') +
+                            attr(this.required,'required') + attr(now.Format('Y-m-d'),'value') + '><span class="date-dow">'+(Calendar.RU.FullWeekDays[now.N])+'</span>,<select class="date-day">';
+                    for(d=1;d<=31;d++) {ctrl += (d!==now.d ? '<option>':'<option selected>')+('0'+d).slice(-2)+'</option>';}
+                    ctrl += '</select><select class="date-month">';
+                    for(m=1;m<=12;m++) {
+                        var mn = ('0'+m).slice(-2);
+                        ctrl += (m!==now.m ? '<option ':'<option selected ')+(' value="'+mn+'">')+Calendar.RU.FullMonthsDays[mn]+'</option>';
+                    }
+                    ctrl += '</select><select class="date-year">';
+                    for(y=now.Y+(this['year-range']===undefined?-5:(-parseInt(this['year-range'])));y<=now.Y+1;y++) {ctrl += (y!==now.Y ? '<option>':'<option selected>')+y+'</option>';}
+                    ctrl += '</select></div></div>';
+                break;
+                case 'time':
+                    var now = (this.value !== undefined && this.value !== '' ? this.value : '08:00:00').split(':',3);
+                    var hh=parseInt(now[0]);
+                    var mm=parseInt(now[1]);
+                    ctrl = '<div><div class="ui-date time"><input type="hidden"' + attr(this.name + (this.duration !== undefined?'[time]':''),'name') + attr(this.id,'id') +
+                            attr(this.required,'required') + attr(this.value,'value') + '><select class="time-hh">';
+                    for(h=0;h<=23;h++) {ctrl += (h!==hh ? '<option>':'<option selected>')+('0'+h).slice(-2)+'</option>';}
+                    ctrl += '</select>&nbsp;&colon;&nbsp;<select class="time-mm">';
+                    for(m=0;m<=55;m+=5) {
+                        var mn = ('0'+m).slice(-2);
+                        ctrl += (m!==mm ? '<option ':'<option selected ')+(' value="'+mn+':00">')+mn+'</option>';
+                    }
+                    ctrl += '</select>';
+                    if(this.duration !== undefined) {
+                        var dTime = (this.duration !== undefined && this.duration !== '' ? this.duration : '00:05:00').split(':',3);
+                        var hh=parseInt(dTime[0]);
+                        var mm=parseInt(dTime[1]);
+                        ctrl += '<span class="date-dow">&nbsp;длительность&nbsp;</span><input type="hidden"' + attr(this.name + '[duration]','name') + attr(this.required,'required') + attr(this.duration,'value') + '><select class="duration-hh">';
+                        for(h=0;h<=8;h++) {ctrl += (h!==hh ? '<option>':'<option selected>')+('0'+h).slice(-2)+'</option>';}
+                        ctrl += '</select>&nbsp;&colon;&nbsp;<select class="duration-mm">';
+                        for(m=0;m<=55;m+=5) {
+                            var mn = ('0'+m).slice(-2);
+                            ctrl += (m!==mm ? '<option ':'<option selected ')+(' value="'+mn+':00">')+mn+'</option>';
+                        }
+                        ctrl += '</select>';
+                    }
+                    ctrl += '</div></div>';
+                break;
+                case 'select':
+                    ctrl = '<select '+attr(this.required,'required') + attr(this.class,'class') + attr(this.name,'name') + attr(this.id,'id') + '>';
+                    var val = this.value;
+                    $.each(this.options,function(key, value){
+                        ctrl += '<option value="'+key+'" '+(val===key ? 'selected':'')+' >'+value+'</option>';
+                    });
+                    ctrl += '</select>';
+                    break;
+            }
+            if(ctrl !== '') {
+                if(this.type !== 'hidden') {
+                    fields[fields.length] = '<div class="field">'+(this.field!==undefined ? this.field :'')+ ctrl + '</div>';
+                }
+                else {
+                    fields[fields.length] = ctrl;
+                }
+            }
+        });
+        $(promptModalContainer).html('<div class="prompt"><div><form method="post" action="'+Action+'">'+(Title!=='' && Title !== undefined ? ('<div class="caption">'+Title+'</div>'):'')+(Desc!=='' && Desc !== undefined ? ('<div class="desc">'+Desc+'</div>'):'')+'<fieldset>'+fields.join('')+'</fieldset><div class="actions">'+(actions.join('&nbsp;')+(actions.length?'&nbsp;':''))+'<button class="ui-button-success">'+SubmitButton+'</button>&nbsp;<button class="ui-button-default cancel" type="button">Отменить</button></div></form></div></div>');
+        document.body.appendChild(promptModalContainer);
+        $('.ui-modal>.prompt button.cancel').click(function(){
+            $('.ui-modal').remove();
+        });
+        Ui.AdjustPosition($(promptModalContainer).find('.prompt'),'center', 'left',undefined,'relative');
+        Ui.OnResize(function(){
+            $('.ui-modal>.prompt').each(function(){
+                Ui.AdjustPosition($(this),'center', 'left',undefined,'relative');
+            });
+        });
     }
 };
 var Widget = {
@@ -229,52 +524,7 @@ var Widget = {
     Tabctrl: function() {
     }
 };
-var Dialog = {
-    Modal: function(url,params){
-	Dialog.Close();
-	(params === undefined ? $.get(url):$.get(url,params)).success(function(dlg){
-	    Wait.End();
-	    var dlgContainer = document.createElement("DIV");
-	    dlgContainer.className = 'ui-modal-dialog';
-	    $(dlgContainer).html(dlg);
-	    var dlgCaption = $(dlgContainer).find('.caption');
-	    if(dlgCaption.length) {
-		$(dlgContainer).draggable({handle: dlgCaption});
-		$(dlgCaption).append('<a class="dialog-close" href="#close">×</a>');
-	    }
-	    //(modal !== undefined && modal === true) ? UI.Modal(false,dlgContainer) : document.body.appendChild(dlgContainer);
-	    document.body.appendChild(dlgContainer);
-	    Dialog.Resize(dlgContainer);
-	    Ui.OnResize(function(){
-		$('.ui-modal-dialog').each(function(){
-		    Dialog.Resize(this);
-		});
-	    });
-	});
-    },
-    Close: function(){
-	$('.ui-modal-dialog:last').remove();
-    },
-    Resize: function(dlg){
-	if ($(dlg).find('.content').hasClass('maximize')) {
-	    Ui.AdjustPosition(
-		    $(dlg).width($(window).width() - 20).height($(window).height() - 20).show(100), 'center');
-	    var dContent = $(dlg).find('.content');
-	    if (dContent.length) {
-		var dFooter = $(dContent).next();
-		if (dFooter.length) {
-		    dContent.height(dContent.parent().innerHeight() - dFooter.outerHeight(true) - dContent.position().top - (dContent.innerHeight() - dContent.height()));
-		}
-		else {
-		    dContent.height(dContent.parent().innerHeight() - dContent.position().top - (dContent.innerHeight() - dContent.height()));
-		}
-	    }
-	}
-	else {
-	    Ui.AdjustPosition($(dlg).show(100), 'center');
-	}
-    }
-};
+
 var Wait = {
     Begin: function(Text,TimeOut,Class) {
 	Text = Text!==undefined && Text!==null ? Text : 'Ожидание';

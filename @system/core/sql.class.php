@@ -45,7 +45,9 @@ class SqlRecordset implements \Iterator, \Countable, \ArrayAccess {
      * @var SqlResult
      */
     private $QueryResult,$Iterator,$NumRows,$FoundRows;
-    public function __construct($Result) {$this->QueryResult = $Result; $this->NumRows = $this->QueryResult ? $this->QueryResult->Count() : 0; $this->FoundRows = $this->QueryResult ? $this->QueryResult->Found() : $this->NumRows; $this->Iterator = 0;}
+    public function __construct($Result) {
+        $this->QueryResult = $Result; $this->NumRows = $this->QueryResult ? $this->QueryResult->Count() : 0; $this->FoundRows = $this->QueryResult ? $this->QueryResult->Found() : $this->NumRows; $this->Iterator = 0;
+    }
     public function count($mode = 'COUNT_NORMAL') {return $this->NumRows;}
     public function current() {return $this->QueryResult ? $this->QueryResult->FetchAssocRow() : 0;}
     public function key() {return $this->Iterator;}
@@ -57,6 +59,9 @@ class SqlRecordset implements \Iterator, \Countable, \ArrayAccess {
     public function offsetSet($offset, $value) {}
     public function offsetUnset($offset) {}
     public function found() {return $this->FoundRows;}
+    public function IsEmpty() {
+        return $this->NumRows == 0;
+    }
     public function toArray($function=false) { 
 	$Array = []; 
 	if(is_callable($function)) {
@@ -67,10 +72,27 @@ class SqlRecordset implements \Iterator, \Countable, \ArrayAccess {
 	}
 	return $Array; 
     }
+    public function toGroupArray($function=false) { 
+	$Array = []; 
+	if(is_callable($function)) {
+	    foreach ($this as $r) { $function($r,$Array); } 
+	}
+	else {
+	    foreach ($this as $r) { $Array[] = $r; } 
+	}
+	return $Array; 
+    }
     public function Column($columnkey) { 
 	$Array = []; 
 	foreach ($this as $r) { $Array[] = @$r[$columnkey]; } 
 	return $Array; 
+    }
+    
+    public function toSortArray(callable $cmp_function) {
+        $Array = [];
+        foreach ($this as $r) { $Array[] = $r; } 
+        usort($Array, $cmp_function);
+        return $Array;
     }
 }
 
@@ -149,6 +171,7 @@ class SqlUpdate {
 	
 	return implode(', ',$FilteredArray);
     }
+    
 }
 
 class SqlInsert {
@@ -174,7 +197,7 @@ class SqlInsert {
         
         $this->sqlLimit = $Limit;
     }
-    public function  __destruct() {$this->insert();}
+    public function  __destruct() {$this->Flush();}
     public function Insert()
     {
         if(func_num_args ()) {
@@ -224,7 +247,13 @@ class Sql
      * @return type
      */
     static public function Format($Query,$Arg1=null/*,...*/) {
-	return func_num_args()==1 ? $Query : call_user_func_array('vsprintf', func_get_args());
+	if(func_num_args()>1) {
+	    $Args = self::Escape(is_array($Arg1) ? $Arg1 : array_slice(func_get_args(), 1));
+	    return vsprintf($Query, $Args);
+	}
+	else {
+	    return $Query;
+	}
     }
 
     /**
@@ -268,7 +297,11 @@ class Sql
      * @return \SqlRecordset
      */
     static public function Recordset($Result,$SubClassIterator=null) {
-	return new \SqlRecordset($Result, $SubClassIterator);
+        if(is_callable($SubClassIterator)) {
+            $Rs =  new \SqlRecordset($Result);
+            return $Rs->toGroupArray($SubClassIterator);
+        }
+        return new \SqlRecordset($Result);
     }
 
     /**
@@ -282,6 +315,6 @@ class Sql
     }
     
     static public function MySql($dbHost,$dbUser,$dbPass,$dbSchema=false,$dbOptions='',$dbPort=3306,$dbEncoding='UTF8',$lcCode='ru_RU') {
-	return new \DB\MySql($dbHost, $dbUser, $dbPass, $dbSchema, $dbOptions, $dbPort, $dbEncoding);
+	return new \DB\MySql($dbHost, $dbUser, $dbPass, $dbSchema, $dbOptions, $dbPort, $dbEncoding,$lcCode);
     }
 }

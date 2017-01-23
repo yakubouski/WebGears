@@ -12,97 +12,52 @@
 	<meta http-equiv="cleartype" content="on">
 	<meta name="mobile-web-app-capable" content="yes">
         <title></title>
-	<link href="/css/reset.css" rel="stylesheet">
-	<link href="/css/ui.css" rel="stylesheet">
-	<link href="/css/menu.css" rel="stylesheet">
-	<link href="/css/default.css" rel="stylesheet">
+	<link href="/css/metro.css" rel="stylesheet">
 	<script src="/js/jquery/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 	<script src="/@js/ui.js" type="text/javascript" charset="utf-8"></script>
     </head>
     <body>
-	<svg:import src="@svg-icons/icons.svg"/>
-	<!--<div class="background-img"><img src="/img/header.png" /></div>-->
-	<aside id="main-sidemenu">
-	    <section>
-		<header style="height: 250px; background-color: black; background-image: url(/img/m/logo.png); background-repeat: no-repeat; background-position: 50% 25%;">
-		    <div style="padding: 10% 16px; z-index: 2">
-			<div class="f14" style="color: #f6faa6;">Международная конференция по интернет-маркетингу</div>
-			<div class="f32" style="color: white; text-shadow: 1px 1px 2px rgba(10, 10, 10, 0.5);">Неделя Байнета. Истоки.</div>
-		    </div>
-		</header>
-		<ul class="left">
-		    <li><a href="#"><svg:use id="agenda" width="48" height="24"/>Программа<i class="ui-badge-blue float-right">2</i></a></li>
-		    <li><a href="#"><svg:use id="professor7" height="24"/>Докладчики</a></li>
-		    <li><a href="#"><svg:use id="teacher7" height="24"/>Мастер-классы</a></li>
-		    <li><a href="#"><svg:use id="shake" height="24"/>Партнеры</a></li>
-		</ul>
-	    </section>
-	</aside>
-	<section id="main-section">
-	    <header><button class="ui-button-link" onclick="$('body>aside').toggleClass('view-aside')"><svg:use id="menu" width="32"/></button>&nbsp;Неделя Байнета. Истоки.</header>
-		<section>
-		    <header>
-			<ul class="top">
-			    <li class="a"><a href="#">14-17 апреля<div>КОНФЕРЕНЦИЯ</div></a></li>
-			    <li><a href="#">14 апреля<div>РАЗРАБОТКА</div></a></li>
-			    <li><a href="#">15 апреля<div>SEO</div></a></li>
-			    <li><a href="#">16 апреля<div>SMM&DIGITAL</div></a></li>
-			    <li><a href="#">17 апреля<div>ИНТЕРНЕТ-МАРКЕТИНГ</div></a></li>
-			</ul>
-			<div style="padding: 2px 5%; text-align: center;">
-			    <div style="display: inline-block;">
-				<div class="f14" style="color: #f6faa6; white-space: nowrap;">Международная конференция по интернет-маркетингу</div>
-				<div class="f32" style="color: white; white-space: nowrap; text-shadow: 1px 1px 2px rgba(10, 10, 10, 0.5);">Неделя Байнета. Истоки.</div>
-			    </div>
-			</div>
-		    </header>
-		    <div style="margin: 10px;">
-			<h1 class="f24">Дни конференции</h1>
-			<section class="block" >
-			    <div class="columns full space">
-				<div style="width: 40px;"><img src="/img/m/day_1_2.png" height="48"/></div>
-				<div>
-				    <div div class="f16">ДЕНЬ РАЗРАБОТКИ</div> 
-				    <div class="f12">Взаимопонимание заказчика и разработчика – это фантастика? Вовсе нет. Секреты продуктивного диалога, благодаря которому «рождаются» успешные сайты и приложения, узнаем на Неделе Байнета.<button class="ui-button-link" onclick="notify.system('success','hello','erdfewrfwerfwe',null,4)">Показать</button></div>
-				</div>
-			    </div>
-			</section>
-			<section class="block" >
-			    <div class="columns full space">
-				<div style="width: 40px;"><img src="/img/m/day_2_2.png" height="48"/></div>
-				<div>
-				    <div div class="f16">ДЕНЬ SEO </div> 
-				    <div class="f12">Нельзя просто взять и перестать следить за новостями в сфере SEO. Какие изменения ждут ее завтра, и как дальше с ними жить? Узнаем об этом на Неделе Байнета, где мы поговорим об эффективном продвижении в нынешних условиях и взаимодействии заказчика и подрядчика.</div>
-				</div>
-			    </div>
-			</section>
-			<section class="block" >
-			    <div class="columns full space">
-				<div style="width: 40px;"><img src="/img/m/day_3_2.png" height="48"/></div>
-				<div>
-				    <div div class="f16">ДЕНЬ SMM&DIGITAL </div> 
-				    <div class="f12">Разрушители легенд на Неделе Байнета. Какие приемы реально помогают завоевать потребителя, а какие только вытягивают деньги? И как разработать SMM-стратегию, которая будет оптимальна в кризисное время? Наши эксперты уже готовят ответы на эти вопросы.</div>
-				</div>
-			    </div>
-			</section>
-			<section class="block" >
-			    <div class="columns full space">
-				<div style="width: 40px;"><img src="/img/m/day_4_2.png" height="48"/></div>
-				<div>
-				    <div div class="f16">ДЕНЬ ИНТЕРНЕТ-МАРКЕТИНГА</div> 
-				    <div class="f12">Эффективный интернет-маркетинг – это таблетка против кризиса, которая поможет не просто оптимизировать затраты на продвижение, но и увеличить продажи. Наши спикеры расскажут, как найти целевую аудиторию и подобрать действенные для бизнеса инструменты.</div>
-				</div>
-			    </div>
-			</section>
-		    </div>
-	    </section>
-	</section>
-	<script>
-	    $(window).mousedown(function(e){
-		if(e.target.id === 'main-sidemenu') {
-		    $('body>aside').hasClass('view-aside') && $('body>aside').removeClass('view-aside');
-		}
-	    });
-	</script>
+        <header>
+            <button class="button"><i class="ion-android-arrow-back" style=""></i></button>
+            <h1 title="adventure works project">Financial Management Implementation</h1>
+        </header>
+        <main>
+            <menu class="ui-activemenu">
+                <li data-route='\/summary\/'><a href='/summary/' >Summary</a></li>
+                <li data-route='\/schedule\/' data-counter="10"><a href='/schedule/'>Schedule</a></li>
+                <li data-route='\/resources\/'><a href='/resources/'>Resources</a></li>
+                <li data-route='\/budget\/'><a href='/budget/'>Budget</a></li>
+                <li data-route='\/inssues\/'><a href='/inssues/'>Inssues and Risks</a></li>
+                <li data-route='\/documents\/'><a href='/documents/'>Documents</a></li>
+            </menu>
+            <div class="ui-toolbar">
+                <button><i class="ion-android-funnel"></i></button>
+                <button><i class="fa fa-reorder"></i></button>
+                <button class="right"><i class="ion-ios-plus-outline"></i>&nbsp;Добавить</button>
+            </div>
+            
+            <div class="ui-toolbar-flat">
+                <h1>Lists, Libraries an other Apps</h1>
+                <button class="right"><i class="ion-ios-plus-outline"></i>&nbsp;Добавить</button>
+            </div>
+            <div>
+                <div class="ui-calendar">
+                    <div class="m">сентябрь, 2015</div>
+                    <div>
+                    <div class="w">пн</div><div class="w">вт</div><div class="w">ср</div>
+                    <div class="w">чт</div><div class="w">пт</div><div class="w">сб</div>
+                    <div class="w">вс</div></div>
+                    <div>
+                    <?$i=42; do{?>
+                    <div class="d"><?=$i?></div>
+                    <?}while(--$i)?>
+                    </div>
+                    <div>
+                </div>
+            </div>
+        </main>
+        <script>
+            Ui.ActiveMenu('body>main>menu');
+        </script>
     </body>
 </html>

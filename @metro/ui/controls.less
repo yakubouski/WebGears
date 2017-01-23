@@ -1,0 +1,218 @@
+@import '../colors.less';
+
+.ui-toolbar,.ui-toolbar-flat {
+    display: block;
+    margin: 8px 0;
+    background-color: fade(@WET-ASPHALT,40%);
+    white-space: nowrap;
+    overflow-x: hidden;
+    border-bottom: 1px solid white;
+    padding: 4px;
+    font-weight: bolder;
+}
+.ui-toolbar,.ui-toolbar>i {
+    color: white;
+}
+.ui-toolbar-flat {
+    background-color: transparent;
+    border-bottom-color: @SILVER;
+}
+.ui-toolbar-flat>h1 {
+    display: inline-block;
+    outline: 0;
+    margin: 0;
+    padding: 2px 4px;
+    min-height: 24px;
+    min-width: 24px;
+    font-weight: @FW-LIGHTER;
+    font-size: 1.2rem;
+    float: left;
+    margin-right: 8px;
+}
+
+[class*="ui-toolbar"]>button,[class*="ui-toolbar"]>a {
+    display: inline-block;
+    outline: 0;
+    margin: 0;
+    padding: 4px;
+    text-decoration: none;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    color: @WET-ASPHALT;
+    background-color: transparent;
+    float: left;
+    font-size: 0.9rem;
+    margin: 0 8px;
+}
+[class*="ui-toolbar"]>button:first-child,[class*="ui-toolbar"]>a:first-child {
+    margin-left: 0;
+}
+[class*="ui-toolbar"]>button:active,[class*="ui-toolbar"]>a:active {
+    background-color: @WET-ASPHALT;
+    color: @CLOUDS;
+}
+[class*="ui-toolbar"]>:last-child {
+    margin-right: 0;
+}
+[class*="ui-toolbar"]>.right {
+    float: right;
+}
+[class*="ui-toolbar"]>button>i,[class*="ui-toolbar"]>a>i,[class*="ui-toolbar"]>button>i:before,[class*="ui-toolbar"]>a>i:before {
+    font-size: 1.5rem;
+    height: 1.6rem;
+    line-height: 1.5rem;
+    min-width: 1.6rem;
+    font-weight: 100;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    vertical-align: middle;
+}
+
+.ui-modal {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    vertical-align: middle;
+    z-index: 9000;
+    background-color: fade(@WET-ASPHALT,60%);
+}
+.ui-modal>.prompt {
+    display: block;
+    padding: 16px;
+    background-color: @CLOUDS;
+    line-height: normal;
+}
+.ui-modal>.prompt>div {
+    display: block;
+    width: 50vw;
+    margin: auto auto;
+}
+.ui-modal>.prompt>div .caption {
+    color: @WET-ASPHALT;
+    font-size: 1.3em;
+    font-weight: @FW-NORMAL;
+}
+.ui-modal>.prompt>div .desc {
+    color: @CONCRETE;
+    font-size: 1.1em;
+    font-weight: @FW-LIGHTER;
+}
+.ui-modal>.prompt>div .actions {
+    margin: 16px 0;
+    text-align: center;
+}
+
+.ui-modal>.prompt>div fieldset {
+    max-height: 50vh;
+    overflow-y: auto;
+    display: block;
+    padding: 0;
+    margin: 0;
+    outline: 0;
+    border: 0;
+    margin-top: 8px;
+}
+
+.ui-modal>.prompt>div input[type='text'],.ui-modal>.prompt>div select,.ui-modal>.prompt>div textarea,.ui-modal>.prompt>div [contenteditable=true] {
+    width: 100%;
+    padding: 4px;
+    outline: 0;
+    border: 1px solid @CONCRETE;
+}
+.ui-modal>.prompt>div [contenteditable=true] {
+    font: 1rem 'Open Sans', Helvetica, Arial, sans-serif; 
+    -webkit-font-smoothing: antialiased; 
+    font-weight: @FW-LIGHTER;
+    min-height: 1em;
+    background-color: white;
+    content: ' ';
+}
+
+.ui-modal>.prompt>div .field {
+    margin-bottom: 16px;
+}
+.ui-modal>.prompt>div select {
+    padding: 0 4px;
+}
+.ui-date,.ui-time {
+    display: inline-block;
+    padding: 0;
+    background-color: white;
+    border: 1px solid @CONCRETE;
+    text-align: center;
+}
+
+.ui-date>*,.ui-time>* {
+    display: inline-block !important;
+    width: auto !important;
+    outline: 0;
+    border: 0 !important;
+    margin: 0;
+    padding: 2px 4px;
+}
+.ui-date>.date-dow {
+    width: 7em !important;
+    text-align: right;
+}
+
+.ui-calendar {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    outline: 0;
+    border: 1px dotted #D0D0D0;
+}
+.ui-calendar>div>.d,.ui-calendar>div>.w {
+    display: inline-block;
+    float: left;
+    width: 1.7rem;
+    height: 1.7rem;
+    line-height: 1.7rem;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 0.9rem;
+    border: 1px dotted transparent;
+    cursor: pointer;
+}
+.ui-calendar>.m {
+    display: block;
+    width: 1.7rem + 14px;
+    border: 1px dotted transparent;
+}
+.ui-calendar>div>.w {
+    cursor: default;
+    font-weight: @FW-BOLD;
+}
+.ui-calendar .w:nth-child(6n+1),.ui-calendar>div>.w:nth-child(7n+1) {
+    color: @POMEGRANATE;
+}
+
+.ui-calendar>div>.d:nth-child(7n+1) {
+    clear: left;
+}
+.ui-calendar>div>.d:hover{
+    border-color: @CONCRETE;
+}
+
+.ui-toolbar-buttons {
+    display: inline-block;
+    white-space: nowrap;
+}
+.ui-toolbar-buttons.right {
+    float: right;
+}
+
+@media only screen 
+and (max-device-width : 640px) {
+    .ui-modal>.prompt>div {
+        width: 90vw;
+    }
+    .ui-modal>.prompt {
+        top: 0 !important;
+    }
+}

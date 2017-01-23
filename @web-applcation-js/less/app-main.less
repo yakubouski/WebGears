@@ -1,0 +1,14 @@
+app-main {
+    display: block;
+    position: relative;
+    height: 1400px;
+    border-left: 1px solid @BORDER-COLOR;
+    border-right: 1px solid @BORDER-COLOR;
+    padding: 0;
+}
+
+@media (max-width:@APP-BODY-WIDTH){ 
+    app-main {
+        border-left: 0; border-right: 0;
+    }
+}

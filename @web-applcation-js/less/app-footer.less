@@ -1,0 +1,25 @@
+app-footer {
+    .frame-width;
+    
+    background-color: @APP-FOOTER-BK-COLOR;
+    position: fixed;
+    bottom: 0;
+    height: @APP-FOOTER-HEIGHT;
+    z-index: 10;
+    
+    
+    border-top: 1px solid @BORDER-COLOR;
+    border-left: 1px solid @BORDER-COLOR;
+    border-right: 1px solid @BORDER-COLOR;
+    
+    & ~ app-main {
+        padding-bottom: @APP-FOOTER-HEIGHT;
+    }
+}
+
+@media (max-width:@APP-BODY-WIDTH){ 
+    app-footer {
+        border-left: 0;
+        border-right: 0;
+    }
+}

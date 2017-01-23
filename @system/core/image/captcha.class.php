@@ -10,8 +10,8 @@ include_once CAPTCHA_DIR.'gif.class.php';
 
 class Captcha
 {
-    const FontSizeMin = 16;
-    const FontSizeMax = 22;
+    const FontSizeMin = 24;
+    const FontSizeMax = 36;
     const FontFace = 'font.ttf';
     const NumFrames = 10;
     const PI = 6.2831853071795862;
@@ -48,7 +48,7 @@ class Captcha
             imageDestroy($DestImage);
         }
         
-        $anim = new GifMerge($Frames, 0, 0, 0, -10, $Framed, 2, 0, 0, 'C_MEMORY');
+        $anim = new \GifMerge($Frames, 0, 0, 0, -10, $Framed, 2, 0, 0, 'C_MEMORY');
         
         return $anim->getAnimation();
     }
@@ -65,27 +65,23 @@ class Captcha
         
         imagefill($hImg,0,0,$clrWhite);
         
-        $x = 20;
+        $x = 4;
         for ($i=0; $i<strlen($Code); $i++)
         {
                 $fh = rand(self::FontSizeMin, self::FontSizeMax);
-                $aFont = ImageTTFText($hImg, $fh, rand(-40, 40), $x, rand($Height/2 - $fh/2, $Height/2 + $fh/2), $clrBlack, CAPTCHA_DIR.self::FontFace, $Code[$i]);
-                $x += $aFont[2] - $aFont[0] + 8;
+                $aFont = ImageTTFText($hImg, $fh, rand(-20, 20), $x, rand($Height/2 - $fh/2, $Height/2 + $fh/2), $clrBlack, CAPTCHA_DIR.self::FontFace, $Code[$i]);
+                $x += $aFont[2] - $aFont[0] + 4;
         }
         return $this->fxLake($hImg, self::NumFrames);
     }
-    public function Get($Code,$Width,$Height,$FgColor,$BkColor)
+    static public function Get($Code,$Width,$Height,$FgColor='#000000',$BgColor='#ffffff')
     {
+        $Captcha = new Captcha();
         ob_end_clean();
         header("Expires: 0");
         header("Cache-Control: no-cache, no-store, must-revalidate");
         header("Content-type: image/gif");
-        echo $this->Generate($Code,$Width,$Height,$FgColor,$BkColor);
+        print $Captcha->Generate(''.$Code,$Width,$Height,$FgColor,$BgColor);
         exit;
     }
 }
-
-/**
- * @return \Image\Captcha
- */
-function Captcha() { return new \Image\Captcha(); }

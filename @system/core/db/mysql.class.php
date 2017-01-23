@@ -141,7 +141,6 @@ class MySql extends \SqlDbDriver
 
     public function query($sql, $args) {
 	$result = empty($args) ? $this->handle()->query(\Sql::Format($sql)) : $this->handle()->query(\Sql::Format($sql, $args));
-	
 	if($result) {
             return is_object($result) ? new MySqlResult($result, $result->num_rows,  preg_match('/\bSQL_CALC_FOUND_ROWS\b/i', $sql) ? $this->foundRows() : $result->num_rows) : 
                 ( $this->handle()->insert_id?:($this->handle()->affected_rows!=-1?$this->handle()->affected_rows:true) );

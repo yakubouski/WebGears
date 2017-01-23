@@ -1,171 +1,291 @@
 <?php
 
 namespace Math\Algo;
-class KMeansSampleData {
-    
-    public $Data;
-    public $K;
-    public $cPositions;
-    public $cClusters;
-    public function __construct(&$Data,$K) {
-	$this->Data = [];
-	$this->K = 0;
-	$this->cPositions = [];
-	$this->cClusters = [];
-    }
-}
-class KMeans {
+
+use Exception;
+
+class KMeans
+{
+    // initial, unmodified data field
+    protected $data;
+    // array of modified data, multi-dimensional based on cluster_count
+    protected $clustered_data;
+    // array of data indexes
+    protected $clustered_indexes;
+    // array of centroids based on cluster_count
+    protected $centroids;
+    // array of centroid distance, useful for testing different cluster_counts
+    protected $centroid_distance;
+    // acceptable methods for clustering
+    protected static $ACCEPTED_CLUSTERING_METHODS = [
+        'random',
+        'forgy',
+    ];
     /**
-     * Расчитать кластеры
-     * @param type $Data
-     * @param type $K
-     * @return \Math\Algo\KMeansSampleData
+     * basic construct that accepts the initial list of observations
+     * exception thrown if data is not large enough for clustering
+     *
+     * @param  $data  array  list of observations, each observation a same-length list of numeric values
      */
-    public function Calculate($Data, $K) {
-	$Sample = new KMeansSampleData($Data,$K);
-	$this->initial_positions($Sample);
-	while (true) {
-	    $changes = $this->clustering($Sample);
-	    if (!$changes) {
-		return $this->get_cluster_values($Sample);
-	    }
-	    $this->recalculate_cpositions($Sample);
-	}
-	return $Sample;
+    public function __construct(array $data)
+    {
+        if (count($data) < 2) {
+            throw new Exception('Data must have more than one row');
+        }
+        $this->data = $data;
     }
-
-    private function clustering(KMeansSampleData &$Sample) {
-	$nChanges = 0;
-	foreach ($Sample->Data as $dataKey => $value) {
-	    $minDistance = null;
-	    $cluster = null;
-	    foreach ($Sample->cPositions as $k => $position) {
-		$distance = $this->distance($value, $position);
-		if (is_null($minDistance) || $minDistance > $distance) {
-		    $minDistance = $distance;
-		    $cluster = $k;
+    /**
+     * primary worker for the clustering logic
+     * broken out from construct due to processing concerns
+     * hydrates the important parameters (clustered data, centroids, etc)
+     *
+     * @param   $cluster_count  integer  how many clusters to break the data into
+     * @param   $centroid       array|string   the preferred method for clustering ('random' or 'forgy' or array of initial centroids)
+     * @return                  array    clustered data from process (getClusteredData)
+     */
+    public function cluster($cluster_count,$centroid = 'forgy')
+    {
+        if ($cluster_count < 2) {
+            throw new Exception('Cluster count must be greater than 1');
+        }
+        if ($cluster_count > count($this->data)) {
+            throw new Exception('Cluster count must be greater than the number of data points');
+        }
+	$centroids = [];
+        do {
+            if (empty($centroids)) {
+                if($centroid == 'random') {
+		    $centroids = $this->getInitialCentroids($cluster_count, 'random');
 		}
-	    }
-	    if (!isset($Sample->cClusters[$dataKey]) || $Sample->cClusters[$dataKey] != $cluster) {
-		$nChanges++;
-	    }
-	    $Sample->cClusters[$dataKey] = $cluster;
-	}
-	return $nChanges;
+		elseif(is_array ($centroid) && $cluster_count<=count($centroid)) {
+		    $centroids = array_slice($centroid, 0,$cluster_count);
+		}
+		else{
+		    $centroids = $this->getInitialCentroids($cluster_count, 'forgy');
+		}
+            } else {
+                $centroids = $this->calculateCentroids($this->clustered_data);
+            }
+            $new_clustered_data = array_fill(0, $cluster_count, []);
+	    $this->clustered_indexes = array_fill(0, $cluster_count, []);
+            foreach ($this->data as $idx=>$observation) {
+                $closest_centroid = $this->calculateClosestCentroid($observation, $centroids);
+		$this->clustered_indexes[intval($closest_centroid)][] = $idx;
+                array_push($new_clustered_data[$closest_centroid], $observation);
+            }
+        } while ($this->assignmentConvergenceCheck((array) $this->clustered_data, $new_clustered_data) === false);
+        $this->centroids = $centroids;
+        // todo calculate centroid distances
+        return $this->getClusteredData();
     }
-
-    function recalculate_cpositions(KMeansSampleData &$Sample,$cPositions, $data, $clusters) {
-	$kValues = $this->get_cluster_values($clusters, $data);
-	foreach ($Sample->cPositions as $k => $position) {
-	    $Sample->cPositions[$k] = empty($kValues[$k]) ? 0 : $this->avg($kValues[$k]);
-	}
+    /**
+     * simple getter to fetch the centroids
+     * will throw an exception if centroids have not been set yet
+     *
+     * @return  array  list of centroids
+     */
+    public function getCentroids()
+    {
+        if (empty($this->centroids)) {
+            throw new Exception('Centroids have not been hydrated yet - run cluster method first');
+        }
+        return $this->centroids;
     }
-
-    function get_cluster_values(KMeansSampleData &$Sample) {
-	$values = array();
-	foreach ($Sample->cClusters as $dataKey => $cluster) {
-	    $values[$cluster][] = $Sample->Data[$dataKey];
-	}
-	return $values;
+    /**
+     * simple getter to fetch the clustered data
+     * will throw an exception if clustered data have not been set yet
+     *
+     * @return  array  multi-dimensional array of clustered data
+     */
+    public function getClusteredData()
+    {
+        if (empty($this->clustered_data)) {
+            throw new Exception('Clustered data have not been hydrated yet - run cluster method first');
+        }
+        return $this->clustered_data;
     }
-
-    private function avg($values) {
-	$n = count($values);
-	$sum = array_sum($values);
-	return ($n == 0) ? 0 : $sum / $n;
+    
+    /**
+     * simple getter to fetch the clustered data
+     * will throw an exception if clustered data have not been set yet
+     *
+     * @return  array  multi-dimensional array of clustered data
+     */
+    public function getClusteredIndexes()
+    {
+        if (empty($this->clustered_indexes)) {
+            throw new Exception('Clustered data have not been hydrated yet - run cluster method first');
+        }
+        return $this->clustered_indexes;
     }
-
-    private function distance($v1, $v2) {
-	return abs($v1 - $v2);
-    }
-
-    private function initial_positions(KMeansSampleData &$Sample) {
-	$min = min($Sample->Data);
-	$max = max($Sample->Data);
-	$int = ceil(abs($max - $min) / $this->K);
-	$k = $Sample->K;
-	while ($k-- > 0) {
-	    $Sample->cPositions[$k] = $min + $int * $k;
-	}
-    }
-}
-
+    /**
+     * simple getter to fetch centroid distance
+     * this number is helpful for determining cluster count for repeat runs
+     * will throw an exception if cluster has not been run yet
+     *
+     * @return  array  list of centroid distances
+     */
 /*
- function kmeans($data, $k)
-{
-        $cPositions = assign_initial_positions($data, $k);
-        $clusters = array();
-        while(true)
-        {
-                $changes = kmeans_clustering($data, $cPositions, $clusters);
-                if(!$changes)
-                {
-                        return kmeans_get_cluster_values($clusters, $data);
+    public function getCentroidDistance()
+    {
+        if (empty($this->centroid_distance)) {
+            throw new Exception('Centroid distance has not been hydrated yet - run cluster method first');
+        }
+        return $this->centroid_distance;
+    }
+*/
+    /**
+     * contained switch for initialization method
+     *
+     * @param   $cluster_count  integer  how manu clusters are requested
+     * @param   $method         string   type of initialization requested
+     * @return                  array    list of centroids for initialization
+     */
+    protected function getInitialCentroids($cluster_count, $method)
+    {
+        if ($method == 'forgy') {
+            return $this->getForgyInitialization($cluster_count);
+        }
+        if ($method == 'random') {
+            return $this->getRandomInitialization($cluster_count);
+        }
+    }
+    /**
+     * get initialization points from random selection
+     * try to lean towards center of data set
+     *
+     * @param   $cluster_count  integer  number of points to fetch
+     * @return                  array    list of initialization points
+     */
+    protected function getRandomInitialization($cluster_count)
+    {
+        $random_keys = array_rand($this->data, $cluster_count);
+        $random_keys = array_flip($random_keys);
+        return array_intersect_key($this->data, $random_keys);
+    }
+    /**
+     * get initialization points from random points in data set
+     * tends to spread out points more
+     *
+     * @param   $cluster_count  integer  number of points to fetch
+     * @return                  array    list of initialization points
+     */
+    protected function getForgyInitialization($cluster_count)
+    {
+        $data_range = $this->calculateRange($this->data);
+        $random_points = [];
+        for ($i = 0; $i < $cluster_count; $i++) {
+            $random_points[$i] = array_fill(0, count($this->data), null);
+            foreach ($data_range as $key => $range) {
+                $random_points[$i][$key] = ($range['min'] + lcg_value() * ($range['max'] - $range['min']));
+            }
+        }
+        return $random_points;
+    }
+    /**
+     * calculate centroids based on clustered data
+     *
+     * @param   $clustered_data  array  multi-dimensional array of clustered data
+     * @return                   array  list of centroids
+     */
+    protected function calculateCentroids(array $clustered_data)
+    {
+        $centroids = [];
+        foreach ($clustered_data as $cluster) {
+            $cluster_sum = array_fill(0, count(current($cluster)), 0);
+            foreach ($cluster as $observation) {
+                foreach ($observation as $key => $value) {
+                    $cluster_sum[$key] += $value;
                 }
-                $cPositions = kmeans_recalculate_cpositions($cPositions, $data, $clusters);
+            }
+            $centroid = array_fill(0, count(current($cluster)), 0);
+            foreach ($cluster_sum as $key => $value) {
+                $centroid[$key] = @($value / count($cluster));
+            }
+            array_push($centroids, $centroid);
         }
-}
-function kmeans_clustering($data, $cPositions, &$clusters)
-{
-        $nChanges = 0;
-        foreach($data as $dataKey => $value)
-        {
-                $minDistance = null;
-                $cluster = null;
-                foreach($cPositions as $k => $position)
-                {
-                        $distance = distance($value, $position);
-                        if(is_null($minDistance) || $minDistance > $distance)
-                        {
-                                $minDistance = $distance;
-                                $cluster = $k;
-                        }
+        return $centroids;
+    }
+    /**
+     * calculate the closest centroid to an observation
+     *
+     * @param   $observation  array    observation from data set
+     * @param   $centroids    array    list of centroids
+     * @return                integer  index that observation should be clustered into
+     */
+    protected function calculateClosestCentroid(array $observation, array $centroids)
+    {
+        $centroid_distance = [];
+        foreach ($centroids as $centroid) {
+            array_push($centroid_distance, $this->calculateDistance($observation, $centroid));
+        }
+        asort($centroid_distance);
+        $centroid_distance = array_keys($centroid_distance);
+        return array_shift($centroid_distance);
+    }
+    /**
+     * check to see if clustered data has converged yet
+     * if not, reassing new data to internal holder and return false to re-run script
+     *
+     * @param   $clustered_data      array    the old holder of clustered_data
+     * @param   $new_clustered_data  array    new clustered_data to check against
+     * @return                       boolean  whether or not convergence has occurred
+     */
+    protected function assignmentConvergenceCheck(array $clustered_data, array $new_clustered_data)
+    {
+        if (empty($clustered_data)) {
+            $this->clustered_data = $new_clustered_data;
+            return false;
+        }
+        foreach ($clustered_data as $key => $cluster) {
+            foreach ($cluster as $observation) {
+                if (!in_array($observation, $new_clustered_data[$key])) {
+                    $this->clustered_data = $new_clustered_data;
+                    return false;
                 }
-                if(!isset($clusters[$dataKey]) || $clusters[$dataKey] != $cluster)
-                {
-                        $nChanges++;
+            }
+        }
+        return true;
+    }
+    /**
+     * helper method to get the range of a set of data
+     *
+     * @param   $data  array  list of points to determine range of
+     * @return         array  formatted return of range based on the data
+     */
+    protected function calculateRange($data)
+    {
+        $data_range = array_fill(0, count(current($data)), ['min' => null, 'max' => null]);
+        foreach ($data as $observation) {
+            $key = 0;
+            foreach ($observation as $value) {
+                if ($data_range[$key]['min'] === null || $data_range[$key]['min'] > $value) {
+                    $data_range[$key]['min'] = $value;
                 }
-                $clusters[$dataKey] = $cluster;
+                if ($data_range[$key]['max'] === null || $data_range[$key]['max'] < $value) {
+                    $data_range[$key]['max'] = $value;
+                }
+                $key++;
+            }
         }
-        return $nChanges;
-}
-function kmeans_recalculate_cpositions($cPositions, $data, $clusters)
-{
-        $kValues = kmeans_get_cluster_values($clusters, $data);
-        foreach($cPositions as $k => $position)
-        {
-                $cPositions[$k] = empty($kValues[$k]) ? 0 : kmeans_avg($kValues[$k]);
+        return $data_range;
+    }
+    /**
+     * helper method to determine the euclidean distance between two n-dimensional points
+     * well, sum of squares, as the actual distance is unneeded - just the relative distance
+     *
+     * @param   $point_a  array  list of numeric values that determine a point
+     * @param   $point_b  array  list of numeric values that determine a point
+     * @return            float  distance between the points
+     */
+    protected function calculateDistance($point_a, $point_b)
+    {
+	return \Math\Algo::EuclideanDistance($point_a, $point_b);
+        $distance = 0;
+        for ($i = 0, $count = count($point_a); $i < $count; $i++) {
+            $difference = @$point_a[$i] - @$point_b[$i];
+            $distance += pow($difference, 2);
         }
-        return $cPositions;
+        return $distance;
+    }
 }
-function kmeans_get_cluster_values($clusters, $data)
-{
-        $values = array();
-        foreach($clusters as $dataKey => $cluster)
-        {
-                $values[$cluster][] = $data[$dataKey];
-        }
-        return $values;
-}
-function kmeans_avg($values)
-{
-        $n = count($values);
-        $sum = array_sum($values);
-        return ($n == 0) ? 0 : $sum / $n;
-}
-function distance($v1, $v2)
-{
-  return abs($v1-$v2);
-}
-function assign_initial_positions($data, $k)
-{
-        $min = min($data);
-        $max = max($data);
-        $int = ceil(abs($max - $min) / $k);
-        while($k-- > 0)
-        {
-                $cPositions[$k] = $min + $int * $k;
-        }
-        return $cPositions;
-}
- */

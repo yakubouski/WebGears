@@ -5,7 +5,6 @@ define ('FILE_SERIALIZE',0x040000,true);
 define('IS_WINDOWS',DIRECTORY_SEPARATOR=='\\',true);
 define('APP_BASE_DIRECTORY',realpath($_SERVER['DOCUMENT_ROOT']).DIRECTORY_SEPARATOR,true);
 define('APP_SYSTEM_DIRECTORY',__DIR__.DIRECTORY_SEPARATOR,true);
-
 !defined('DEBUG') && define('DEBUG',false,true);
 !defined('APP_INTERNAL_ENCODING') && define('APP_INTERNAL_ENCODING','utf-8',true);
 !defined('APP_SESSION_PATH') && define('APP_SESSION_PATH','.sessions/',true);
@@ -19,6 +18,8 @@ define('APP_SYSTEM_DIRECTORY',__DIR__.DIRECTORY_SEPARATOR,true);
 !defined('APP_LOG_DIRECTORY') && define('APP_LOG_DIRECTORY',APP_BASE_DIRECTORY.'.log/',true);
 !defined('APP_DEFAULT_MODULE') && define('APP_DEFAULT_MODULE','index',true);
 
+!defined('SESSION_USER_VARIABLE') && define('SESSION_USER_VARIABLE','\AUTH\$USER',true);
+
 /**
  * @package Core
  * @subpackage Application
@@ -26,13 +27,27 @@ define('APP_SYSTEM_DIRECTORY',__DIR__.DIRECTORY_SEPARATOR,true);
  */
 final class Application {
     static public $directoryVirtualBase = APP_BASE_DIRECTORY;
-    static public $directoryVirtualCompile = APP_BASE_DIRECTORY.APP_COMPILE_DIRECTORY;
-    static public $directoryVirtualModules = APP_BASE_DIRECTORY.APP_MODULES_DIRECTORY;
-    static public $directoryVirtualModels = APP_BASE_DIRECTORY.APP_MODELS_DIRECTORY;
+    static public $directoryVirtualCompile = APP_COMPILE_DIRECTORY;
+    static public $directoryVirtualModules = APP_MODULES_DIRECTORY;
+    static public $directoryVirtualModels = APP_MODELS_DIRECTORY;
     static public $directoryLogs = APP_LOG_DIRECTORY;
+    static public $directoryAutoload = false;
     static public $IsDebugMode = DEBUG;
 
     static private $ApplicationDBI,$ApplicationModules,$ApplicationControllers;
+
+    static public function ServerName() {
+        return filter_input(INPUT_SERVER,'SERVER_NAME',FILTER_SANITIZE_STRING);
+    }
+    static public function ServerUrl($Path='/') {
+        return !empty(filter_input(INPUT_SERVER,'HTTPS',FILTER_SANITIZE_STRING))?'https://':'http://'.filter_input(INPUT_SERVER,'SERVER_NAME',FILTER_SANITIZE_STRING).$Path;
+    }
+
+
+    static public function RegisterAutoload($Directory) {
+        self::$directoryAutoload = APP_BASE_DIRECTORY.$Directory.'/';
+    }
+
 
     /**
      * Определение виртуального хоста
@@ -64,17 +79,18 @@ final class Application {
      * @param string $SessionId ID сессии
      * @param int $SessionTTL время жизни сессии
      */
-    static public function Run($SessionStart=FALSE,$SessionClassHandler=NULL, $SessionName=NULL, $SessionPath=NULL, $SessionTTL=NULL, $SessionId=NULL)
+    static public function Run($SessionStart=FALSE,$SessionClassHandler=NULL, $SessionName=NULL, $SessionPath=NULL, $SessionTTL=NULL, $SessionId=NULL, $SessionDomain=NULL)
     {
 	self::__rewriteResources();
-	Session::Initialize($SessionClassHandler, $SessionName, $SessionPath, $SessionTTL, $SessionId);
+	$SessionStart && Session::Initialize($SessionClassHandler, $SessionName, $SessionPath, $SessionTTL, $SessionId,$SessionDomain);
         self::__dispatch();
     }
 
     static public function __autoload($Class) {
 	$Class = str_replace('\\',DIRECTORY_SEPARATOR,strtolower(ltrim($Class,'\\')));
 	if(!(file_exists(($filename = APP_SYSTEM_DIRECTORY.$Class.'.class.php')) || 
-		file_exists(($filename = self::$directoryVirtualModels.$Class.'.model.php')))) {return true;}
+		file_exists(($filename = self::$directoryVirtualModels.$Class.'.model.php')) || 
+                    (!empty(self::$directoryAutoload) && file_exists(($filename = self::$directoryAutoload.'models/'.$Class.'.model.php')) ) )) {return true;}
 	require_once $filename;
     }
     
@@ -84,7 +100,6 @@ final class Application {
     static public function __initialize($Debug=false)
     {
 	self::$IsDebugMode = $Debug;
-	
 	@mb_internal_encoding(APP_INTERNAL_ENCODING);
 	@setlocale(LC_ALL, APP_LOCALE_CODE, APP_LOCALE_LANG, APP_LOCALE_LANGUAGE);
 	@header('Content-Type: text/html; charset=utf-8');
@@ -94,14 +109,14 @@ final class Application {
 	    @ini_set('log_errors', 'On');
 	    @ini_set('ignore_repeated_errors', 'On');
 	    @error_reporting(-1);
-	    @ini_set('error_log', self::$directoryLogs.'php.log');
+	    @ini_set('error_log', self::$directoryLogs.self::ServerName().'.php.log');
 	} else {
 	    @ini_set('display_errors','Off');
 	    @ini_set('display_startup_errors','Off');
 	    @ini_set('log_errors', 'On');
 	    @ini_set('ignore_repeated_errors', 'On');
 	    @error_reporting(-1);
-	    @ini_set('error_log', self::$directoryLogs.'php.log');
+	    @ini_set('error_log', self::$directoryLogs.self::ServerName().'.php.log');
 	}
 	@spl_autoload_register('Application::__autoload');
     }
@@ -133,13 +148,17 @@ final class Application {
 	    if (($controller = self::Controller($controllerName))) {
 		$methodName = isset($requestRoute[0]) ? strip_tags($requestRoute[0]) : NULL;
 		((empty($methodName) || !method_exists($controller, ('on' . $methodName))) && ($methodName = 'Default')) || array_shift($requestRoute);
-		(!method_exists($controller, "On$methodName")) && (Error::Exception('',$controller));
+		(!method_exists($controller, "On$methodName")) && (Exception());
 	    } elseif (!(($controller = self::Controller(APP_DEFAULT_MODULE)) && ($methodName = $controllerName) && method_exists($controller, "On$controllerName"))) {
-		throw new Exception('', 0);
+                empty($controller) && Exception('No default controller');
+		array_unshift($requestRoute, $methodName);
+		$methodName = 'Default';
+		//throw new Exception('', 0);
 	    }
 	    call_user_func_array(array($controller, "On$methodName"), $requestRoute);
 	    
-	} catch(Error $e) {
+	} catch(Exception $e) {
+            trigger_error($e->getMessage().PHP_EOL."\t".$e->getFile(),E_USER_ERROR);
 	    $DefaultContoller = self::Controller(APP_DEFAULT_MODULE);
 	    if($DefaultContoller && method_exists($DefaultContoller, 'On404')) {
 		$DefaultContoller->On404();
@@ -174,7 +193,8 @@ final class Application {
         {
             if(!file_exists(($filename = (self::$directoryVirtualModules.$ControllerName . '/' . $ControllerName . '.controller.php'))))
             {
-                return false;
+                if(empty(self::$directoryAutoload) || !file_exists(($filename = (self::$directoryAutoload.'modules/'.$ControllerName . '/' . $ControllerName . '.controller.php'))))
+                    return false;
             }
 	    
 	    ($ControllerName != APP_DEFAULT_MODULE) && self::Controller(APP_DEFAULT_MODULE, true);
@@ -207,7 +227,8 @@ final class Application {
         {
             if(!file_exists(($filename = (self::$directoryVirtualModules.$ModuleName . '/' . $ModuleName . '.module.php'))))
             {
-                return false;
+                if(empty(self::$directoryAutoload) || !file_exists(($filename = (self::$directoryAutoload.'modules/'.$ModuleName . '/' . $ModuleName . '.module.php'))))
+                    return false;
             }
             include_once $filename;
             $classOf = $ModuleName.'Module';
@@ -254,7 +275,7 @@ class Module {
 	return Sql::Recordset(call_user_func_array("Sql::Query", $QueryArgs), $SubClassIterator);
     }
     
-    public function __callStatic($ModuleName, $arguments) {
+    static public function __callStatic($ModuleName, $arguments) {
 	return Application::Module($ModuleName) ?: new \Exception("Module: {$name} not found.");
     }
     
@@ -288,20 +309,20 @@ abstract class Controller {
 	return Html::Template($tplLocation, $tplArgs);
     }
     
-    protected function Location($Url='/',$Params=[], $HttpCode=0) {
+    static public function Location($Url='/',$Params=[], $HttpCode=0) {
 	while (ob_get_level()) ob_end_clean();
 	$HttpCode ? header('Location: '.$Url.(!empty($Params) ? ('?'.http_build_query($Params)) :''),TRUE,$HttpCode) : 
 	    header('Location: '.$Url.(!empty($Params) ? ('?'.http_build_query($Params)) :''));
 	exit;
     }
     
-    protected function Reload() {
+    static public function Reload($Fragment='') {
 	while (ob_get_level()) ob_end_clean();
-	header('Location: '.$_SERVER['HTTP_REFERER']);
+	header('Location: '.$_SERVER['HTTP_REFERER'].(!empty($Fragment) ? "#$Fragment":''));
 	exit;
     }
     
-    protected function HTTP_404($PageContent=false,$Code='404 Not Found') {
+    static public function HTTP_404($PageContent=false,$Code='404 Not Found') {
 	while (ob_get_level()) ob_end_clean();
 	header("HTTP/1.0 $Code");
 	header("Status: $Code");
@@ -310,14 +331,20 @@ abstract class Controller {
     }
     
 
-    public function ReturnJSON($Data) {
+    static public function ReturnJSON($Data) {
 	while (ob_get_level()) ob_end_clean();
         echo json_encode($Data,JSON_UNESCAPED_UNICODE);
         exit;
     }
-    public function ReturnHTML($Data) {
+    static public function ReturnHTML($Data) {
 	while (ob_get_level()) ob_end_clean();
 	header('Content-type: text/html');
+	print $Data;
+	exit;
+    }
+    static public function ReturnTPL($Data,$Mime) {
+	while (ob_get_level()) ob_end_clean();
+	header('Content-type: '.$Mime);
 	print $Data;
 	exit;
     }
@@ -345,12 +372,8 @@ function Exception($Msg='exception',$Code=0,$Class='Exception') {
  * @return bool
  */
 function AssertException($Condition,$Exception=false) {
-    $a = is_object($Condition);
-    $a = is_subclass_of($Condition, '\SqlObject');
-    $a = $Condition->IsEmpty();
-    $a = !$Condition->IsEmpty();
     return 
-	(is_object($Condition) && (is_subclass_of($Condition, '\SqlObject') ? !$Condition->IsEmpty() : true)) && !empty($Condition) ? true :
+	(is_object($Condition) && (is_subclass_of($Condition, '\SqlObject') ? !$Condition->IsEmpty() : true)) || empty($Condition) ? true :
 	    (empty($Exception) ? false : Exception($Exception));
 }
 

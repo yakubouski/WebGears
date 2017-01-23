@@ -1,0 +1,48 @@
+app-header {
+    .frame-width;
+    & ~ app-main {
+        padding-top: @APP-HEADER-HEIGHT;
+    }
+
+    display: block;
+    background-color: @APP-HEADER-BK-COLOR;
+    color: white;
+    height: @APP-HEADER-HEIGHT;
+    position: fixed;
+    left: 0; right: 0;
+    z-index: 10;
+
+    border-bottom: 1px solid @BORDER-COLOR;
+    border-left: 1px solid @BORDER-COLOR;
+    border-right: 1px solid @BORDER-COLOR;
+    
+    button {
+        outline: none;
+        float: right;
+        background-color: transparent;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        width: @APP-HEADER-HEIGHT;
+        height: @APP-HEADER-HEIGHT;
+        svg {
+            line-height: @APP-HEADER-HEIGHT;
+            fill: none;
+            stroke: @APP-HEADER-COLOR;
+        }
+        &:active {
+            background-color: @ASBESTOS;
+            svg {
+                fill: @CLOUDS;
+                stroke: @CLOUDS;
+            }
+        }
+    }
+}
+
+@media (max-width:@APP-BODY-WIDTH){ 
+    app-header {
+        border-left: 0;
+        border-right: 0;
+    }
+}

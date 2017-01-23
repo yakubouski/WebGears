@@ -1,6 +1,39 @@
 <?php
 class Form 
 {
+    static public function SecToTime($Sec,$Format='%02d:%02d:%02d',&$H=null,&$M=null,&$S=null) {
+        $Sec = intval($Sec);
+        $H = floor($Sec/3600);
+        $M = floor(($Sec - $H*3600) / 60);
+        $S = $Sec - $H*3600 - $M * 60;
+        return sprintf($Format,$H,$M,$S);
+    }
+    
+    static public function MinutesToText($Minutes,$Glue=' ') {
+        $D = intval(floor($Minutes/(24*60)));
+        $H = intval(floor(($Minutes - $D*24*60)/60));
+        $M = intval(floor(($Minutes - $H*60 - $D*24*60)));
+        $Txt = [];
+        !empty($D) && $Txt[] = sprintf('%d&nbsp;дн.',$D);
+        ((empty($H) && !empty($D)) || !empty($H)) && $Txt[] = sprintf('%d&nbsp;ч.',$H);
+        
+        (empty($M) && (empty($H) && empty($D))) ? $Txt[] = sprintf('%d&nbsp;мин.',$M) : '';
+        
+        !empty($M) && $Txt[] = sprintf('%d&nbsp;мин.',$M);
+        
+        return implode($Glue, $Txt);
+    }
+    
+    /**
+     * Убирает из пути все непечатанные символы, символы переходы типа ../ /./ и т.д.
+     * @param string $value
+     * @param bool $trim убирает начальные и конечные смиволы /\
+     * @return string
+     */
+    static public function Path($value,$trim=false) {
+        return $trim ? trim(preg_replace('%(\.\./)|(/\./)|([^\w.\\\\/-]+)%', '/', $value),'\\/'):
+            preg_replace('%(\.\./)|(/\./)|([^\w.\\\\/-]+)%', '/', $value);
+    }
     /**
      * Преобразует значение к целому, убирает все символы кроме цифр [+-]
      * @param mixed $value
@@ -49,7 +82,7 @@ class Form
      * @return float
      */
     static public function Float($value,$decimals=2) {
-	return number_format(floatval(str_replace([' ',','],['','.'],(string)$value)),2,'.','') ;
+	return number_format(floatval(str_replace([' ',','],['','.'],(string)$value)),$decimals,'.','') ;
     }
     /**
      * Преобразует значение в объект времени/даты, также можно установить любое значение даты 
@@ -66,6 +99,7 @@ class Form
 	!(is_null($d) || is_null($m) || is_null($Y)) && $date->setDate(intval($Y?:$date->format('Y')),intval($m?:$date->format('m')),intval($d?:$date->format('d')));
 	return $date;
     }
+    
     /**
      * Преобразует значение в объект времени/даты, также можно установить любое значение даты 
      * @param mixed $value
@@ -105,6 +139,25 @@ class Form
 	return in_array($needle, $Haystack) ? $needle : $Default;
     }
     /**
+     * Генерирует стойкий пароль заданной длины
+     * @param int $Length количество символов в пароле
+     * @param bool $UpperCase использовать символы в верхнем регистре
+     * @param bool $LowerCase использовать символы в нижнем регистре
+     * @param bool $Digits использовать цифры
+     * @return string
+     */
+    static public function Password($Length,$UpperCase=true,$LowerCase=true,$Digits=true) {
+        static $aUpper = 'QAZWSXEDCRFVTGBYHNUJMIKOLP', $aLower='qazwsxedcrfvtgbyhnujmikolp', $aDigits='09876543210987654321098765';
+        $Alphabet = str_split(''.($UpperCase ? $aUpper : '').($LowerCase ? $aLower : '').($Digits ? $aDigits : '').(!$UpperCase && !$LowerCase && !$Digits ? $aLower:''));
+
+        $AlphabetLength = count($Alphabet)-1;
+        $Password = '';
+	while((--$Length)>=0) {
+            $Password .= $Alphabet[rand(0, $AlphabetLength)];
+        }
+        return $Password;
+    }
+    /**
      * Проверяет, я вляется ли запрос сабмитом данных, если я вляется, то может выполнить метод $On, либо возвращает значение $On
      * <code>
      * \Form::Is('add-user',function(){
@@ -136,7 +189,8 @@ class Form
      * @param string $value
      * @return string
      */
-    static public function Domain($value) {
+    static public function Domain($value,&$proto=null) {
+        $proto = preg_match('%^\s*https://%i', (string) $value) ? 'https':'http';
 	return preg_replace('%^\s*(?:.*?://)?([^/?#]+).*$%m', '\1', (string) $value);
     }
     /**
@@ -250,7 +304,7 @@ class Form
 	$PathTo = rtrim($PathTo,'/\\').DIRECTORY_SEPARATOR;
 	File::MkDir($PathTo,true);
 	foreach ($Files as &$file) {
-	    if($file['error']==0 && $file['size'] > $MaxFileSize) { $file['error'] = UPLOAD_ERR_INI_SIZE; continue; }
+	    if($file['error']==0 && $MaxFileSize && $file['size'] > $MaxFileSize) { $file['error'] = UPLOAD_ERR_INI_SIZE; continue; }
 	    if($file['error']==0 && !empty($Ext) && !in_array(File::Type($file['name']), $Ext)) { $file['error'] = UPLOAD_ERR_EXTENSION; continue; }
 	    if($file['error']==0 && !empty($Mime) && !in_array(File::Type($file['type']), $Mime)) { $file['error'] = UPLOAD_ERR_EXTENSION; continue; }
 	    
@@ -265,6 +319,108 @@ class Form
 	return $Files;
     }
     
+    static public function UploadData($Data,$PathTo,$Name=NULL,$Mime=NULL) {
+	$PathTo = rtrim($PathTo,'/\\').DIRECTORY_SEPARATOR;
+	File::MkDir($PathTo,true);
+        $destFileName = !empty($Name) ? $Name : (time().'.'.rand(10000,90000).sha1($Data));
+        $Files = [['type'=>$Mime,'name'=>$destFileName,'error'=>0,'size'=>strlen($Data),'id'=>$destFileName]];
+        \File::Write($PathTo.$destFileName, $Data);
+        \File::Write($PathTo.'.'.$destFileName, $Files[0], FILE_JSON|FILE_GZIP);
+	return $Files;
+    }
+    
+    /**
+     * Загрузить полученные файлы в папку, создается два файла один с содержимым, второй с описанием файла. В качестве имени файла используется уникальный ID
+     * @param array $Files массив файлов @see(\Form::Files(...))
+     * @param string $PathTo Путь, куда будут перемещены загруженный файлы
+     * @param int $MaxFileSize максимальный размер одного файла, если превышает, то файл не будет загружен, если = 0, то любой размер
+     * @param array $Ext массив разрешенных расширений файлов (в lowercase)
+     * @param array $Mime массив разрешенных типов mime (в lowercase)
+     * @return array Список файлов, в случае если файл загружен успешно у него пояаится атрибут $file['id'] с уникальным именем
+     */
+    static public function UploadImages(array $Files,$PathTo,$MaxFileSize=0,array $Ext=[],array $Mime=[],$ResizeToWidthHeight=false) {
+	$PathTo = rtrim($PathTo,'/\\').DIRECTORY_SEPARATOR;
+	File::MkDir($PathTo,true);
+	foreach ($Files as &$file) {
+	    if($file['error']==0 && $MaxFileSize && $file['size'] > $MaxFileSize) { $file['error'] = UPLOAD_ERR_INI_SIZE; continue; }
+	    if($file['error']==0 && !empty($Ext) && !in_array(File::Type($file['name']), $Ext)) { $file['error'] = UPLOAD_ERR_EXTENSION; continue; }
+	    if($file['error']==0 && !empty($Mime) && !in_array(File::Type($file['type']), $Mime)) { $file['error'] = UPLOAD_ERR_EXTENSION; continue; }
+	    
+	    $destFileName = time().'.'.rand(10000,90000).sha1($file['name']);
+	    
+	    if ($file['error'] != 0 || !is_uploaded_file($file['tmp_name']) || !self::move_uploaded_image_file($ResizeToWidthHeight,$file['type'],$file['tmp_name'], File::FullPath($PathTo).$destFileName)) { $file['error'] = $file['error']?:UPLOAD_ERR_CANT_WRITE; continue;}
+	    
+	    $file['id'] = $destFileName;
+	    
+	    \File::Write($PathTo.'.'.$destFileName, $file, FILE_JSON|FILE_GZIP);
+	}
+	return $Files;
+    }
+    
+    static private function move_uploaded_image_file ($MaxWidthAndHeight,$Mime,$TempFile,$DestFile) {
+        $IsJpeg = false;
+        if(!is_uploaded_file($TempFile)) return false;
+        switch(strtolower($Mime)) {
+            case 'image/jpeg': case 'image/jpg':
+                $img = imagecreatefromjpeg( $TempFile );
+                $IsJpeg = true;
+            break;
+            case 'image/png':
+                $img = imagecreatefrompng( $TempFile );
+                imagesavealpha($img,true); 
+                imagealphablending($img, true); 
+            break;
+            case 'image/gif':
+                $img = imagecreatefromgif( $TempFile );
+                imagesavealpha($img,true); 
+            break;
+            default:
+                return false;
+        }
+        
+        $width = imagesx( $img );
+        $height = imagesy( $img );
+        
+        if($MaxWidthAndHeight && ($width > $MaxWidthAndHeight || $height > $MaxWidthAndHeight)) {
+            if($width>$height) {
+                $new_width = $MaxWidthAndHeight;
+                $new_height = floor( $height * ( $MaxWidthAndHeight / $width ) );
+            }
+            else {
+                $new_height = $MaxWidthAndHeight;
+                $new_width = floor( $width * ( $MaxWidthAndHeight / $height ) );
+            }
+            $tmp_img = imagecreatetruecolor( $new_width, $new_height );
+            if($IsJpeg) {
+                imagealphablending($tmp_img, true); 
+                $transparent = imagecolorallocatealpha( $tmp_img, 0, 0, 0, 127 ); 
+                imagefill( $tmp_img, 0, 0, $transparent ); 
+            }
+
+            imagesavealpha($tmp_img,true); 
+            imagecopyresized( $tmp_img, $img, 0, 0, 0, 0, $new_width, $new_height, $width, $height );
+            
+            switch(strtolower($Mime)) {
+                case 'image/jpeg': case 'image/jpg':
+                    imagejpeg( $tmp_img, $DestFile,100 );
+                break;
+                case 'image/png':
+                    imagepng( $tmp_img, $DestFile);
+                break;
+                case 'image/gif':
+                    imagegif( $tmp_img, $DestFile);
+                break;
+                default:
+                    return false;
+            }
+        }
+        else {
+            imagedestroy($img);
+            move_uploaded_file($TempFile, $DestFile);
+        }
+        return true;
+    }
+    
     /**
      * Получить информацию о загруженном файле
      * @param string $FileId ID файла. @see(\Form::Upload(...))
@@ -274,10 +430,11 @@ class Form
      */
     static public function FileInfo($FileId,$Path,&$File=[]) {
 	$Path = rtrim($Path,'/\\').DIRECTORY_SEPARATOR;
-	$FileId = preg_replace('%[^\w\.]+%', '', $FileId);
+	$FileId = preg_replace('%[^\w\.-]+%', '', $FileId);
 	if(File::Exist($FileName = $Path.'.'.$FileId)) {
 	    $File = \File::Read($FileName, FILE_JSON|FILE_GZIP);
 	    $File['path'] = $Path.$FileId;
+            $File['ext'] = pathinfo($File['name'],PATHINFO_EXTENSION);
 	    return $File;
 	}
 	return false;
@@ -290,8 +447,149 @@ class Form
      */
     static public function Download($FileId,$Path,&$File=[]) {
 	if(self::FileInfo($FileId, $Path,$File) !== false) {
-	    \File::DownloadFile($File['path'], $File['type'],['Content-Disposition: attachment; filename='.$File['name']]);
+	    \File::DownloadFile($File['path'], $File['type'],["Content-Disposition: attachment;filename=\"".$File['name']."\";filename*=utf-8''".  rawurlencode($File['name'])]);
 	}
 	exit;
+    }
+    
+    /**
+     * Скачать, ранее загруженный файл. В случае успеха или не успеха, выполнение скрипта прекращается
+     * @param string $FileName
+     * @param string $Mime
+     * @param mixed $Content
+     */
+    static public function DownloadContent($FileName,$Mime,$Content) {
+        \File::DownloadContent($Content, $Mime,["Content-Disposition: attachment;filename=\"".($FileName)."\";filename*=utf-8''".rawurlencode($FileName)]);
+	exit;
+    }
+    
+    /**
+     * Генерируется cтойкий пароль
+     * @param int $length длина праоля
+     * @param string $chars алфавит пароля
+     * @return string
+     */
+    public static function GeneratePassword($length = 8, $chars = '23456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ')
+    {
+        #36 ^ 6 = 2 176 782 336 unique combinations minimum
+        $chars = count_chars($chars,$mode = 3); #gets unique chars
+        $len = strlen($chars);
+        mt_srand((double) microtime() * 1000000);  #initialize
+        for ($password = '', $i = 0; $i < $length; $i++) {
+            $password .= substr($chars,mt_rand(0,$len - 1),1);
+        }
+        return $password;
+    }
+
+    static public function Value(&$Array,$Name,$Type,$Default='',$Format=false,$Required=false,$FailedText='') {
+        
+        return new FormInputValue(isset($Array[$Name]) ? $Array[$Name] : NULL,$Type,$Default,$Format,$Required,$FailedText);
+    }
+    static public function Assert() {
+        $Exception = FALSE;
+        $InvalidFields = [];
+        foreach (func_get_args() as $arg) {
+            (is_a($arg,'FormInputValue') && !$arg->Assert()) && $InvalidFields[] = $arg->FailedText;
+            $Exception |= (is_a($arg,'FormInputValue') && !$arg->Assert()) || (is_scalar($arg) && empty($arg));
+        }
+        if($Exception) {throw new FormException('form_validate_exception', $InvalidFields);}
+        return !$Exception;
+    }
+    const Int = 1;
+    const Decimal = 2;
+    const String = 3;
+    const Text = 4;
+    const Html = 5;
+    const File = 6;
+    const Files = 7;
+    const Image = 8;
+    const Json = 9;
+    const Date = 10;
+    const DateTime = 11;
+    const Time = 12;
+    const Enum = 13;
+    const Url = 14;
+    const Email = 15;
+    const Domain = 16;
+    const Phone = 17;
+    const Digits = 18;
+    const AlphaDigits = 19;
+    const dmY = 20;
+}
+
+class FormException extends Exception {
+    public $fields;
+    public function __construct($message,$fileds,$code=0) {
+        $this->fields = $fileds;
+        parent::__construct($message, $code);
+    }
+    public function getFields() {
+        return $this->fields;
+    }
+}
+
+class FormInputValue {
+    public $Value,$Type,$Default,$Format,$Required,$FailedText;
+    public function __construct($Value,$Type,$Default,$Format,$Required,$FailedText) {
+        $this->Value = $this->Sanitize($Value,$Type,$Format);
+        $this->Type = $Type;
+        $this->Default = $Default;
+        $this->Format = $Format;
+        $this->Required = $Required;
+        $this->FailedText = $FailedText;
+    }
+    public function __toString() {
+        return !empty($this->Value) ? (string)$this->Value : (string)$this->Default;
+    }
+    public function Assert() {
+        return (($this->Required && !empty($this->Value)) || !$this->Required) ;
+    }
+    private function dmY($value) {
+        return preg_match('/(\d{1,2}).(\d{1,2}).(\d{4})/', $value,$m) ? sprintf('%d-%02d-%02d',intval($m[3]),intval($m[2]),intval($m[1])) : null;
+    }
+    private function date($value,$format) {
+        return preg_match('/(\d{4}-\d{1,2}-\d{1,2})/', $value,$m) ? $m[1] : null;
+    }
+    private function datetime($value) {
+        return preg_match('/(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}:\d{1,2})(:\d{1,2})?/i', $value,$m) ? ($m[1].$m[2].(isset($m[3])?$m[3]:':00')) : null;
+    }
+    private function time($value) {
+        return preg_match('/(\d{1,2}:\d{1,2})(:\d{1,2})?/i', $value,$m) ? ($m[1].(isset($m[2])?$m[2]:':00')) : null;
+    }
+    private function digits($value) {
+        return !empty($value) ? preg_replace('/\D+/', '', $value) : null;
+    }
+    private function alphadigits($value) {
+        return !empty($value) ? preg_replace('/[^\d\w-=+.]+/', '', $value) : null;
+    }
+    private function image($File,$params,$mime=['image/png','image/jpeg','image/jpg','image/gif']) {
+        if($File['error']==0 && $File['size']!==0 && in_array($File['type'],$mime)) {
+            return \Image\Thumbs::Upload(
+                    $File['tmp_name'],$File['type'],isset($params['name']) ? $params['name'] : $File['name'],
+                    $params['path'],isset($params['max']) ? $params['max'] : 0);
+        }
+        return null;
+        
+    }
+    private function Sanitize(&$value,&$type,&$format) {
+        switch($type) {
+            case \Form::Int: return \Form::Int($value);
+            case \Form::Decimal: return \Form::Float($value,3);
+            case \Form::Digits: return \Form::String($this->digits($value),$format);
+            case \Form::AlphaDigits: return \Form::String($this->alphadigits($value),$format);
+            case \Form::String: return \Form::String($value,$format);
+            case \Form::Text: return \Form::String($value,$format);
+            case \Form::Html: return \Form::Text($value,$format);
+            case \Form::Date: return $this->date($value);
+            case \Form::dmY: return $this->dmY($value);
+            case \Form::DateTime: return $this->datetime($value);
+            case \Form::Time: return $this->time($value);
+            case \Form::Enum: return \Form::Enum($value,$format);
+            case \Form::Phone: return \Form::Phone($value,$format);     
+            case \Form::Url: return \Form::Url($value,$format);         
+            case \Form::Email: return \Form::EMail($value);
+            case \Form::Domain: return \Form::Domain($value);
+            case \Form::Image: return $this->image($value,$format);
+        }
     }
 }

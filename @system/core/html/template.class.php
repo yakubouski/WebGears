@@ -1,5 +1,6 @@
 <?php
 namespace Html;
+require_once __DIR__.'/../html.class.php';
 
 abstract class Widget {
     private $widgetArgs;
@@ -82,12 +83,29 @@ class Template
 	{
 	    !empty($this->templateVariables) && extract($this->templateVariables,EXTR_REFS);
 	    !empty($Args) && extract($Args,EXTR_REFS);
-
-	    ob_start();
-	    require($templateFileName);
-	    return ob_get_clean();
+            try {
+                ob_start();
+                require($templateFileName);
+                return ob_get_clean();
+            } catch (Exception $ex) {
+                trigger_error('### TEMPLATE ' . ($templateFileName?$this->templateFileName:$templateFileName) . ' # EXCEPTION ###',E_USER_ERROR);
+                return var_export($ex, true);
+            }
 	}
-	trigger_error('### TEMPLATE ' . ($templateFileName?$this->templateFileName:$templateFileName) . ' # NOTEXIST ###');
+	trigger_error('### TEMPLATE ' . ($templateFileName?$this->templateFileName:$templateFileName) . ' # NOTEXIST ###',E_USER_ERROR);
+    }
+    
+    public function MsWordXml($DocumentName,$templateFileName=false,$Args=false,$RawPath=FALSE) {
+        $this->Download($DocumentName, $DocumentType,'application/vnd.ms-word', $templateFileName, $Args, $RawPath);
+    }
+    
+    public function Export($templateFileName=false,$Args=false,$RawPath=FALSE) {
+        $templateFileName = (!$templateFileName?$this->templateFileName:$templateFileName);
+        !empty($this->templateVariables) && extract($this->templateVariables,EXTR_REFS);
+        !empty($Args) && extract($Args,EXTR_REFS);
+        ob_start();
+        require($templateFileName);
+        return ob_get_clean();
     }
 
     public function Exists($templateFileName) {
@@ -97,20 +115,20 @@ class Template
     
     public function Display($templateFileName=false,$Args=false,$RawPath=FALSE) { print $this->Fetch($templateFileName,$Args,$RawPath); }
 
-    private function __pop($class)
+    protected function __pop($class)
     {
         return array_pop($this->templateObjectsStack[$class]);
     }
-    private function __push($class,$object)
+    protected function __push($class,$object)
     {
         $this->templateObjectsStack[$class][] = $object;
     }
-    private function __current($class)
+    protected function __current($class)
     {
         return @end($this->templateObjectsStack[$class]);
     }
 
-    private function __block($class,$subclass,$args,$CompleteBeginEnd)
+    protected function __block($class,$subclass,$args,$CompleteBeginEnd)
     {
         $className = "{$class}{$subclass}";
         (!class_exists($className,false) && file_exists($file_name = __DIR__."/$class/$subclass.$class.php")) && include_once ($file_name); 
@@ -151,7 +169,7 @@ class Template
     
     private function __mkCompileDir($Dir) {
 	!file_exists($Dir) && mkdir($Dir, 0774, true);
-	!file_exists($Dir.'/.htaccess') && file_put_contents($Dir.'/.htaccess', "order deny,allow\ndeny from all");
+	!file_exists($Dir.'.htaccess') && file_put_contents($Dir.'.htaccess', "order deny,allow\ndeny from all");
     }
     
     private function __compile(&$sourceFileName,$RawPath=false) 
@@ -180,5 +198,11 @@ class Template
         return true;
     }
 
-    public function  __toString() { return $this->Fetch(); }
+    public function  __toString() { 
+        try {
+            return $this->Fetch(); 
+        }  catch (Exception $e) {
+            
+        }
+    }
 }

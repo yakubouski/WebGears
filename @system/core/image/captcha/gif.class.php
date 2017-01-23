@@ -7,12 +7,12 @@
 /*
             GifMerge V 1.0e (C) http://gifs.hu
    =======================================================
-   A liszensze ennek a Class-nek megváltozott és Freeware
+   A liszensze ennek a Class-nek megvï¿½ltozott ï¿½s Freeware
    lett.
-   Szabadon használható ingyenes és kereskedelmi jellegû
-   oldalakon, valamint publikálható és terjeszthetõ, de
-   a forráskód nem módosítható a szerzõ beleegyezése nélkül.
-   Ha használod a kódokat kérlek helyezz el egy felém mutató
+   Szabadon hasznï¿½lhatï¿½ ingyenes ï¿½s kereskedelmi jellegï¿½
+   oldalakon, valamint publikï¿½lhatï¿½ ï¿½s terjeszthetï¿½, de
+   a forrï¿½skï¿½d nem mï¿½dosï¿½thatï¿½ a szerzï¿½ beleegyezï¿½se nï¿½lkï¿½l.
+   Ha hasznï¿½lod a kï¿½dokat kï¿½rlek helyezz el egy felï¿½m mutatï¿½
    linket.
    =======================================================
    Licence of This class has been changed freeware!
@@ -78,7 +78,7 @@ class GifMerge
 	/*///////////////////////////////////////////////*/
 	/*//          Function :: GifMerge()           //*/
 	/*///////////////////////////////////////////////*/
-	function GifMerge($images, $t1, $t2, $t3, $loop, $dl, $dp, $xpos, $ypos, $model)
+	function __construct($images, $t1, $t2, $t3, $loop, $dl, $dp, $xpos, $ypos, $model)
 	{
 		if($this->debug) print "Welcome to the GifMerge $this->ver debugger...\n<br>\n--------------------------------------------\n<br>\n<br>\n";
 		if($model)

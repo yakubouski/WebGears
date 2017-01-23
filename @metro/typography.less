@@ -1,0 +1,66 @@
+@FS-INITIAL  : 1rem;
+@FS-MEDIUM   : @FS-INITIAL;
+@FS-XX-SMALL : 0.5rem;
+@FS-X-SMALL  : 0.75rem;
+@FS-SMALL    : 0.9rem;
+@FS-LARGE    : 1.5rem;
+@FS-X-LARGE  : 2rem;
+@FS-XX-LARGE : 2.7rem;
+
+.f-initial,.f-medium {font-size: @FS-INITIAL;}
+.f-xx-small {font-size: @FS-XX-SMALL;}
+.f-x-small {font-size: @FS-X-SMALL;}
+.f-small {font-size: @FS-SMALL;}
+.f-large {font-size: @FS-LARGE;}
+.f-x-large {font-size: @FS-X-LARGE;}
+.f-xx-large {font-size: @FS-XX-LARGE;}
+
+.font-size(@size: 1.4) {font-size: (@size * 10) px;font-size: @size rem;}
+
+/*FONT WEIGHT*/
+@FW-INITIAL : 500;
+@FW-NORMAL  : @FW-INITIAL;
+@FW-LIGHTER : 300;
+@FW-LIGHT   : 400;
+@FW-BOLDER  : 500;
+@FW-BOLD    : 600;
+
+.font-weight(@weight: @FW-NORMAL) {font-weight: @weight;}
+.f-normal   {font-weight: @FW-NORMAL;}
+.f-lighter  {font-weight: @FW-LIGHTER;}
+.f-light    {font-weight: @FW-LIGHT;}
+.f-bolder   {font-weight: @FW-BOLDER;}
+.f-bold     {font-weight: @FW-BOLD;}
+
+.t-underline { text-decoration: underline; }
+.t-overline { text-decoration: overline; }
+.t-strike {text-decoration: line-through; }
+.t-normal {text-decoration: none;}
+.t-uppercase {text-transform: uppercase;}
+.t-lowercase {text-transform: lowercase;}
+.t-capitalize {text-transform: capitalize;}
+.t-nowrap {white-space: nowrap;}
+.t-prewrap {white-space: pre-wrap;}
+.t-ellipsis {white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis;}
+.t-left  {text-align: left;}
+.t-right  {text-align: right;}
+.t-justify  {text-align: justify;}
+.t-center  {text-align: center;}
+.t-top {vertical-align: top;}
+.t-middle {vertical-align: middle;}
+.t-bottom {vertical-align: bottom;}
+.nowrap {white-space: nowrap;}
+.nowrap.ellipsis {
+    display: inline-block;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+} 
+
+
+.ellipsis(@width) {white-space: nowrap; overflow-x: hidden; text-overflow: ellipsis; max-width: @width;}
+
+
+.font(@size:false;@weight:false;@decoration:false;@transform:false) { 
+    .if-font(@val,@prop) when not(@val=false) {@{prop}: @val;}
+    .if-font(@size,font-size);.if-font(@transform,text-transform);.if-font(@decoration,text-decoration);.if-font(@weight,font-weight);
+}
